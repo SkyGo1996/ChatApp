@@ -58,7 +58,7 @@ export function ConversationRow({ conversation }: Props) {
   return (
     <Link
       href={{
-        pathname: "/(tabs)/chats/[id]",
+        pathname: "/chats/[id]",
         params: {
           id: String(conversation.id),
           name: conversation.name,

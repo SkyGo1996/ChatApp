@@ -18,7 +18,7 @@ export function ChatHeaderTitle({ conversationId, name, avatar }: Props) {
   return (
     <Link
       href={{
-        pathname: "/(tabs)/chats/[id]/profile",
+        pathname: "/chats/[id]/profile",
         params: { id: conversationId },
       }}
       asChild>

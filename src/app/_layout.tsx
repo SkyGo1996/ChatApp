@@ -110,6 +110,20 @@ export default function RootLayout() {
             <InnerProviders>
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="chats/[id]"
+                  options={{
+                    title: "Chat",
+                    headerBackButtonDisplayMode: "minimal",
+                  }}
+                />
+                <Stack.Screen
+                  name="chats/[id]/profile"
+                  options={{
+                    title: "Profile",
+                    headerBackButtonDisplayMode: "minimal",
+                  }}
+                />
                 <Stack.Screen name="+not-found" />
               </Stack>
             </InnerProviders>
