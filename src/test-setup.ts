@@ -187,6 +187,22 @@ jest.mock("@shopify/flash-list", () => {
   };
 });
 
+// 11. expo-image — no native image pipeline in Jest
+jest.mock("expo-image", () => {
+  const React = require("react") as typeof import("react");
+  const { View } = require("react-native") as typeof import("react-native");
+  const Image = (props: {
+    testID?: string;
+    accessibilityLabel?: string;
+    [key: string]: unknown;
+  }) =>
+    React.createElement(View, {
+      testID: props.testID ?? "expo-image",
+      accessibilityLabel: props.accessibilityLabel,
+    });
+  return { Image };
+});
+
 // RNTL v14 built-in matchers: no need for @testing-library/jest-native/extend-expect
 // Importing from @testing-library/react-native auto-extends expect.
 // Keep explicit import for coverage if pure import is avoided in some tests.
