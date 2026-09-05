@@ -10,23 +10,11 @@ import { useNodeHttpAdapterForMsw } from "@/test-msw";
 import { createTestQueryClient } from "@/test-utils";
 
 import { CONVERSATIONS_PAGE_SIZE } from "@/features/conversations/api/fetchConversationsPage";
+import { makeUser } from "@/features/conversations/test-fixtures";
 
 import { useConversations } from "./useConversations";
 
 const usersUrl = `${API_BASE_URL}${endpoints.conversations.list}`;
-
-function makeUser(id: number) {
-  return {
-    id,
-    name: `User ${id}`,
-    username: `user${id}`,
-    email: `user${id}@example.com`,
-    avatar: `https://i.pravatar.cc/150?img=${id}`,
-    phone: "+1-555-0100",
-    website: "https://example.com",
-    address: { street: "1 St", city: "Town", zipcode: "00000" },
-  };
-}
 
 const offsets: number[] = [];
 

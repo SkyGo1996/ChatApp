@@ -5,25 +5,14 @@ import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
 import { useNodeHttpAdapterForMsw } from "@/test-msw";
 
+import { makeUser } from "@/features/conversations/test-fixtures";
+
 import {
   CONVERSATIONS_PAGE_SIZE,
   fetchConversationsPage,
 } from "./fetchConversationsPage";
 
 const usersUrl = `${API_BASE_URL}${endpoints.conversations.list}`;
-
-function makeUser(id: number) {
-  return {
-    id,
-    name: `User ${id}`,
-    username: `user${id}`,
-    email: `user${id}@example.com`,
-    avatar: `https://i.pravatar.cc/150?img=${id}`,
-    phone: "+1-555-0100",
-    website: "https://example.com",
-    address: { street: "1 St", city: "Town", zipcode: "00000" },
-  };
-}
 
 const server = setupServer();
 
