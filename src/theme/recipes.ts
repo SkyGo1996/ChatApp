@@ -25,107 +25,63 @@ function isIOS(): boolean {
   return Platform.OS === "ios";
 }
 
-/** Floating pill tab bar. */
-export function chromeBar(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) {
-    return {
-      backgroundColor: theme.colors.glassBg,
-      borderColor: theme.colors.glassBorder,
-      borderWidth: 0.5,
-      elevation: 0,
-      useGlass: true,
-      blurRadius: theme.blur.full,
-    };
-  }
+/** Shared iOS Liquid Glass chrome shape (identical across bar/header/composer/sheet/fab). */
+function iosGlassChrome(theme: AppTheme): ChromeRecipe {
   return {
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: theme.colors.glassBg,
+    borderColor: theme.colors.glassBorder,
+    borderWidth: 0.5,
+    elevation: 0,
+    useGlass: true,
+    blurRadius: theme.blur.full,
+  };
+}
+
+/** Shared Android tonal chrome — background + elevation vary per surface. */
+function androidTonalChrome(
+  backgroundColor: string,
+  elevation: number,
+  theme: AppTheme
+): ChromeRecipe {
+  return {
+    backgroundColor,
     borderColor: theme.colors.border,
     borderWidth: 1,
-    elevation: 2,
+    elevation,
     useGlass: false,
   };
+}
+
+/** Floating pill tab bar. */
+export function chromeBar(theme: AppTheme): ChromeRecipe {
+  if (isIOS()) return iosGlassChrome(theme);
+  return androidTonalChrome(theme.colors.surface2, 2, theme);
 }
 
 /** Chat / screen header. */
 export function chromeHeader(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) {
-    return {
-      backgroundColor: theme.colors.glassBg,
-      borderColor: theme.colors.glassBorder,
-      borderWidth: 0.5,
-      elevation: 0,
-      useGlass: true,
-      blurRadius: theme.blur.full,
-    };
-  }
-  return {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    elevation: theme.elevation.elevation,
-    useGlass: false,
-  };
+  if (isIOS()) return iosGlassChrome(theme);
+  return androidTonalChrome(
+    theme.colors.surface,
+    theme.elevation.elevation,
+    theme
+  );
 }
 
 /** Floating composer pill. */
 export function chromeComposer(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) {
-    return {
-      backgroundColor: theme.colors.glassBg,
-      borderColor: theme.colors.glassBorder,
-      borderWidth: 0.5,
-      elevation: 0,
-      useGlass: true,
-      blurRadius: theme.blur.full,
-    };
-  }
-  return {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    elevation: 2,
-    useGlass: false,
-  };
+  if (isIOS()) return iosGlassChrome(theme);
+  return androidTonalChrome(theme.colors.surface, 2, theme);
 }
 
 /** Action / Block sheet. */
 export function chromeSheet(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) {
-    return {
-      backgroundColor: theme.colors.glassBg,
-      borderColor: theme.colors.glassBorder,
-      borderWidth: 0.5,
-      elevation: 0,
-      useGlass: true,
-      blurRadius: theme.blur.full,
-    };
-  }
-  return {
-    backgroundColor: theme.colors.surface3,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    elevation: 3,
-    useGlass: false,
-  };
+  if (isIOS()) return iosGlassChrome(theme);
+  return androidTonalChrome(theme.colors.surface3, 3, theme);
 }
 
 /** Scroll-to-bottom FAB. */
 export function chromeFab(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) {
-    return {
-      backgroundColor: theme.colors.glassBg,
-      borderColor: theme.colors.glassBorder,
-      borderWidth: 0.5,
-      elevation: 0,
-      useGlass: true,
-      blurRadius: theme.blur.full,
-    };
-  }
-  return {
-    backgroundColor: theme.colors.surface3,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    elevation: 3,
-    useGlass: false,
-  };
+  if (isIOS()) return iosGlassChrome(theme);
+  return androidTonalChrome(theme.colors.surface3, 3, theme);
 }
