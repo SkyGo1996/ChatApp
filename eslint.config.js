@@ -28,7 +28,7 @@ module.exports = defineConfig([
   // https://typescript-eslint.io/getting-started/typed-linting/#troubleshooting
   // https://docs.expo.dev/guides/using-eslint/#flat-config
   {
-    files: ["eslint.config.js", "babel.config.js", "metro.config.js"],
+    files: ["eslint.config.js", "babel.config.js", "metro.config.js", "jest.config.js"],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
       globals: globals.node,
