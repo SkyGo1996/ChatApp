@@ -63,6 +63,8 @@ function ConversationsList() {
     items,
     isPending,
     isError,
+    isRefetchError,
+    isFetchNextPageError,
     error,
     refetch,
     isRefetching,
@@ -74,10 +76,10 @@ function ConversationsList() {
   const retryDisabled = useRetryDisabledUntil(error);
 
   const onEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
       void fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
   const onRefresh = useCallback(() => {
     void refetch();
@@ -101,13 +103,34 @@ function ConversationsList() {
   );
 
   const listFooter = useCallback(() => {
+    if (isFetchNextPageError && items.length > 0) {
+      return (
+        <ErrorRetry
+          variant="inline"
+          message={conversationsErrorMessage(error)}
+          onRetry={() => {
+            void fetchNextPage();
+          }}
+          retryDisabled={retryDisabled}
+          retryAccessibilityLabel="Retry conversations"
+        />
+      );
+    }
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.footer}>
         <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
-  }, [isFetchingNextPage, theme.colors.primary]);
+  }, [
+    isFetchNextPageError,
+    items.length,
+    error,
+    fetchNextPage,
+    retryDisabled,
+    isFetchingNextPage,
+    theme.colors.primary,
+  ]);
 
   if (isPending) {
     return <ConversationShimmer />;
@@ -127,23 +150,37 @@ function ConversationsList() {
   }
 
   return (
-    <FlashList
-      data={items}
-      renderItem={renderConversationItem}
-      keyExtractor={keyExtractor}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={0.5}
-      ListEmptyComponent={listEmpty}
-      ListFooterComponent={listFooter}
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefetching && !isFetchingNextPage}
-          onRefresh={onRefresh}
-          tintColor={theme.colors.primary}
+    <View style={styles.listWrap}>
+      {isRefetchError && items.length > 0 ? (
+        <ErrorRetry
+          variant="inline"
+          message={conversationsErrorMessage(error)}
+          onRetry={() => {
+            void refetch();
+          }}
+          retryDisabled={retryDisabled}
+          retryAccessibilityLabel="Retry conversations"
         />
-      }
-    />
+      ) : null}
+      <FlashList
+        testID="conversations-list"
+        data={items}
+        renderItem={renderConversationItem}
+        keyExtractor={keyExtractor}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching && !isFetchingNextPage}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+      />
+    </View>
   );
 }
 
@@ -165,6 +202,9 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   inner: {
+    flex: 1,
+  },
+  listWrap: {
     flex: 1,
   },
   listContent: {

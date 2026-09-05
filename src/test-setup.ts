@@ -162,6 +162,23 @@ jest.mock("expo-haptics", () => ({
   },
 }));
 
+// 9b. lucide-react-native — ESM package; stub icons as simple View/Text hosts
+jest.mock("lucide-react-native", () => {
+  const React = require("react") as typeof import("react");
+  const { View } = require("react-native") as typeof import("react-native");
+  const Icon = (props: Record<string, unknown>) =>
+    React.createElement(View, { ...props, testID: "lucide-icon" });
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop: string) => {
+        if (prop === "__esModule") return true;
+        return Icon;
+      },
+    }
+  );
+});
+
 // 10. FlashList → FlatList for Jest (v2 recycling not needed in unit tests)
 jest.mock("@shopify/flash-list", () => {
   const { FlatList } = require("react-native") as typeof import("react-native");

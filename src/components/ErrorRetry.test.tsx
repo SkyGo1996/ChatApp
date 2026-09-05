@@ -44,4 +44,19 @@ describe("ErrorRetry", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(Haptics.impactAsync).not.toHaveBeenCalled();
   });
+
+  test("inline variant still calls onRetry", async () => {
+    const onRetry = jest.fn();
+    const { findByLabelText, getByText } = await render(
+      <ErrorRetry
+        variant="inline"
+        message="Refresh failed"
+        onRetry={onRetry}
+        retryAccessibilityLabel="Retry conversations"
+      />
+    );
+    expect(getByText("Refresh failed")).toBeTruthy();
+    await fireEvent.press(await findByLabelText("Retry conversations"));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
 });

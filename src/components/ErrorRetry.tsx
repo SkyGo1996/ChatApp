@@ -11,6 +11,11 @@ type Props = {
   retryDisabled?: boolean;
   /** Light haptic on Retry tap. Default true; ErrorBoundary sets false. */
   hapticOnRetry?: boolean;
+  /**
+   * `page` fills parent (empty-list / boundary).
+   * `inline` is a compact banner/footer that does not consume flex:1.
+   */
+  variant?: "page" | "inline";
 };
 
 export function ErrorRetry({
@@ -20,6 +25,7 @@ export function ErrorRetry({
   retryAccessibilityLabel,
   retryDisabled = false,
   hapticOnRetry = true,
+  variant = "page",
 }: Props) {
   const handleRetry = () => {
     if (retryDisabled || !onRetry) return;
@@ -30,7 +36,7 @@ export function ErrorRetry({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={variant === "inline" ? styles.inline : styles.container}>
       <Text style={styles.message}>{message}</Text>
       {onRetry ? (
         <Pressable
@@ -60,6 +66,13 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     justifyContent: "center",
     padding: theme.space(6),
+  },
+  inline: {
+    alignItems: "center",
+    backgroundColor: theme.colors.bg,
+    justifyContent: "center",
+    paddingHorizontal: theme.space(4),
+    paddingVertical: theme.space(3),
   },
   message: {
     color: theme.colors.destructive,
