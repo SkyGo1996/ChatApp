@@ -12,7 +12,7 @@ import type { TestInstance } from "test-renderer";
 
 import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
-import { useNodeHttpAdapterForMsw } from "@/test-msw";
+import { mswMessagesCollectionUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
 import { createTestQueryClient } from "@/test-utils";
 
 import { makeUser } from "@/features/conversations/test-fixtures";
@@ -20,6 +20,7 @@ import { makeUser } from "@/features/conversations/test-fixtures";
 import ConversationsScreen from "./ConversationsScreen";
 
 const usersUrl = `${API_BASE_URL}${endpoints.conversations.list}`;
+const postsPath = mswMessagesCollectionUrl();
 
 type Mode = "ok" | "fail500" | "next429";
 
@@ -59,7 +60,16 @@ const server = setupServer(
       offset,
       results,
     });
-  })
+  }),
+  // Soft enrichment for mounted rows (ticket 05) — empty preview is fine in list tests.
+  http.get(postsPath, () =>
+    HttpResponse.json({
+      total: 0,
+      limit: 1,
+      offset: 0,
+      results: [],
+    })
+  )
 );
 
 beforeAll(() => {

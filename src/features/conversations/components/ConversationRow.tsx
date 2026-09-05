@@ -1,33 +1,74 @@
+import * as Haptics from "expo-haptics";
 import { Link } from "expo-router";
-import {
-  Pressable,
-  StyleSheet as RNStyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { AccessibilityInfo, Pressable, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
 
+import { Avatar } from "@/components/Avatar";
+import { formatConversationTimestamp } from "@/utils/datetime";
+import { pressInScale, pressOutScale } from "@/utils/pressScale";
+
+import { useConversationPreview } from "@/features/conversations/hooks/useConversationPreview";
 import type { Conversation } from "@/features/conversations/types";
+
+const PREVIEW_PLACEHOLDER = "No messages yet";
 
 type Props = {
   conversation: Conversation;
 };
 
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0];
-  const second = parts[1];
-  if (!first) return "?";
-  if (!second) return first.slice(0, 2).toUpperCase();
-  return `${first[0] ?? ""}${second[0] ?? ""}`.toUpperCase();
-}
-
 /**
- * Stub row for ticket 04. Ticket 05 replaces with Avatar, preview, timestamp,
- * press scale, and haptic.
+ * Conversation row: Avatar, Name, last-Message preview, timestamp.
+ * Preview enrichment fails soft to placeholder; press scale + light haptic
+ * respect Reduce Motion.
  */
 export function ConversationRow({ conversation }: Props) {
-  const initials = initialsFromName(conversation.name);
+  const { preview } = useConversationPreview(conversation.id);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    let cancelled = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (!cancelled) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  // Prefer locally patched fields (ticket 08) over enrichment.
+  const previewText =
+    conversation.lastMessage ?? preview?.text ?? PREVIEW_PLACEHOLDER;
+  const timestampSource =
+    conversation.lastMessageAt ?? preview?.createdAt ?? null;
+  const timestamp = timestampSource
+    ? formatConversationTimestamp(timestampSource)
+    : null;
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const onPressIn = () => {
+    if (reduceMotion) return;
+    pressInScale(scale);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const onPressOut = () => {
+    if (reduceMotion) return;
+    pressOutScale(scale);
+  };
 
   return (
     <Link
@@ -39,18 +80,31 @@ export function ConversationRow({ conversation }: Props) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Open chat with ${conversation.name}`}
-        style={styles.row}>
-        <View style={styles.avatar}>
-          <Text style={styles.initials}>{initials}</Text>
-        </View>
-        <View style={styles.body}>
-          <Text style={styles.name} numberOfLines={1}>
-            {conversation.name}
-          </Text>
-          <Text style={styles.preview} numberOfLines={1}>
-            No messages yet
-          </Text>
-        </View>
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}>
+        <Animated.View style={[styles.row, animatedStyle]}>
+          <Avatar
+            name={conversation.name}
+            uri={conversation.avatar}
+            size={48}
+            recyclingKey={String(conversation.id)}
+          />
+          <View style={styles.body}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
+                {conversation.name}
+              </Text>
+              {timestamp ? (
+                <Text style={styles.timestamp} numberOfLines={1}>
+                  {timestamp}
+                </Text>
+              ) : null}
+            </View>
+            <Text style={styles.preview} numberOfLines={1}>
+              {previewText}
+            </Text>
+          </View>
+        </Animated.View>
       </Pressable>
     </Link>
   );
@@ -60,37 +114,40 @@ const styles = StyleSheet.create((theme) => ({
   row: {
     alignItems: "center",
     backgroundColor: theme.colors.bg,
-    borderBottomColor: theme.colors.border,
-    borderBottomWidth: RNStyleSheet.hairlineWidth,
     flexDirection: "row",
-    minHeight: 68,
     maxHeight: 72,
+    minHeight: 64,
     paddingHorizontal: theme.space(4),
-    paddingVertical: theme.space(3),
-  },
-  avatar: {
-    alignItems: "center",
-    backgroundColor: theme.colors.surface3,
-    borderRadius: theme.radius.full,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
-  initials: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.type.subhead.size,
-    fontWeight: "600",
   },
   body: {
+    // 1px inset border leading from avatar edge (design over requirements)
+    borderBottomColor: theme.colors.border,
+    borderBottomWidth: 1,
     flex: 1,
+    justifyContent: "center",
     marginLeft: theme.space(3),
+    minHeight: 64,
+    paddingVertical: theme.space(3),
+  },
+  nameRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: theme.space(2),
   },
   name: {
     color: theme.colors.text,
+    flex: 1,
     fontSize: theme.type.headline.size,
     fontWeight: theme.type.headline.weight,
     letterSpacing: theme.type.headline.letterSpacing,
     lineHeight: theme.type.headline.lineHeight,
+  },
+  timestamp: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.type.caption1.size,
+    fontWeight: theme.type.caption1.weight,
+    letterSpacing: theme.type.caption1.letterSpacing,
+    lineHeight: theme.type.caption1.lineHeight,
   },
   preview: {
     color: theme.colors.textSecondary,

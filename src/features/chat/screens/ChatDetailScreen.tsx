@@ -1,14 +1,35 @@
 import { Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { AccessibilityInfo, Pressable, Text, View } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
+
+import { motion } from "@/theme/tokens";
 
 type Props = {
   conversationId: string;
 };
 
 export default function ChatDetailScreen({ conversationId }: Props) {
-  return (
-    <View style={styles.container}>
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (!cancelled) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  const content = (
+    <>
       <Text style={styles.title}>Chat {conversationId}</Text>
       <Text style={styles.subtitle}>Chat detail placeholder</Text>
       <Link
@@ -24,7 +45,22 @@ export default function ChatDetailScreen({ conversationId }: Props) {
           <Text style={styles.linkText}>View Profile →</Text>
         </Pressable>
       </Link>
-    </View>
+    </>
+  );
+
+  if (reduceMotion) {
+    return <View style={styles.container}>{content}</View>;
+  }
+
+  return (
+    <Animated.View
+      style={styles.container}
+      entering={FadeInUp.duration(motion.fadeUp.duration).withInitialValues({
+        opacity: motion.fadeUp.from.opacity,
+        transform: [{ translateY: motion.fadeUp.from.translateY }],
+      })}>
+      {content}
+    </Animated.View>
   );
 }
 
