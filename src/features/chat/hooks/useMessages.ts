@@ -20,9 +20,15 @@ import type { Message } from "@/features/chat/types";
 export type MessagesPageParam = "tail" | number;
 
 export function messagesInfiniteOptions(conversationId: string | number) {
-  return infiniteQueryOptions({
+  return infiniteQueryOptions<
+    MessagesPage,
+    Error,
+    InfiniteData<MessagesPage, MessagesPageParam>,
+    ReturnType<typeof queryKeys.messages>,
+    MessagesPageParam
+  >({
     queryKey: queryKeys.messages(conversationId),
-    queryFn: ({ pageParam }: { pageParam: MessagesPageParam }) => {
+    queryFn: ({ pageParam }) => {
       if (pageParam === "tail") {
         return fetchNewestMessagesPage(conversationId);
       }
@@ -31,9 +37,8 @@ export function messagesInfiniteOptions(conversationId: string | number) {
         offset: pageParam,
       });
     },
-    initialPageParam: "tail" as MessagesPageParam,
-    getPreviousPageParam: (firstPage: MessagesPage) =>
-      firstPage.previousCursor ?? undefined,
+    initialPageParam: "tail",
+    getPreviousPageParam: (firstPage) => firstPage.previousCursor ?? undefined,
     // No newer API pages — ticket 08 appends local sends into cache.
     getNextPageParam: () => undefined,
   });
