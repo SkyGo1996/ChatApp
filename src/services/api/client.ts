@@ -5,10 +5,11 @@ import { handleRateLimit } from "./rate-limit";
 export const API_BASE_URL = "https://responserift.dev/api";
 
 export type ApiError = {
-  status?: number;
+  /** Absent on network/timeout; may be set to `undefined` explicitly when normalizing. */
+  status?: number | undefined;
   message: string;
-  retryAfter?: string;
-  headers?: Record<string, string>;
+  retryAfter?: string | undefined;
+  headers?: Record<string, string> | undefined;
   raw: unknown;
 };
 

@@ -60,7 +60,9 @@ const testRootReducer = combineReducers({
 export function createTestStore(preloadedState?: Partial<TestRootState>) {
   return configureStore({
     reducer: testRootReducer,
-    preloadedState: preloadedState as TestRootState | undefined,
+    ...(preloadedState !== undefined
+      ? { preloadedState: preloadedState as TestRootState }
+      : {}),
   });
 }
 

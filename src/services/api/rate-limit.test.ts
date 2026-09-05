@@ -19,9 +19,10 @@ describe("handleRateLimit", () => {
 
   test("429 without retryAfter still toasts", () => {
     handleRateLimit({ status: 429 });
-    expect(toast.error).toHaveBeenCalledWith("Too many requests — try again", {
-      description: undefined,
-    });
+    expect(toast.error).toHaveBeenCalledWith(
+      "Too many requests — try again",
+      undefined
+    );
   });
 
   test("x-ratelimit-remaining <10 warns", () => {

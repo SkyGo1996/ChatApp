@@ -1,9 +1,9 @@
 import { toast } from "sonner-native";
 
 export type RateLimitInfo = {
-  status?: number;
-  retryAfter?: string;
-  headers?: Record<string, string>;
+  status?: number | undefined;
+  retryAfter?: string | undefined;
+  headers?: Record<string, string> | undefined;
 };
 
 function normalizeHeaderKey(key: string): string {
@@ -30,9 +30,10 @@ export function handleRateLimit(info: RateLimitInfo): void {
   if (status === 429) {
     const retryAfter = info.retryAfter ?? getHeader(headers, "retry-after");
     const detail = retryAfter ? `Retry after ${retryAfter}s` : undefined;
-    toast.error("Too many requests — try again", {
-      description: detail,
-    });
+    toast.error(
+      "Too many requests — try again",
+      detail !== undefined ? { description: detail } : undefined
+    );
     return;
   }
 
