@@ -8,24 +8,25 @@ import {
   PURGE,
   REGISTER,
   REHYDRATE,
+  type PersistConfig,
 } from "redux-persist";
 
 import { blockedStorage, themeStorage } from "./persist";
-import blockedReducer from "./slices/blockedSlice";
-import themeReducer from "./slices/themeSlice";
+import blockedReducer, { type BlockedState } from "./slices/blockedSlice";
+import themeReducer, { type ThemeState } from "./slices/themeSlice";
 
-const blockedPersistConfig = {
+const blockedPersistConfig: PersistConfig<BlockedState> = {
   key: "blocked",
   storage: blockedStorage,
   version: 1,
-  migrate: (state: unknown): Promise<unknown> => Promise.resolve(state),
+  migrate: (state) => Promise.resolve(state),
 };
 
-const themePersistConfig = {
+const themePersistConfig: PersistConfig<ThemeState> = {
   key: "theme",
   storage: themeStorage,
   version: 1,
-  migrate: (state: unknown): Promise<unknown> => Promise.resolve(state),
+  migrate: (state) => Promise.resolve(state),
 };
 
 const rootReducer = combineReducers({
