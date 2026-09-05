@@ -18,8 +18,12 @@ export function createQueryClient(): QueryClient {
           return isRetryableStatus(status);
         },
         retryDelay: (attemptIndex, error: unknown) => {
-          const raw = (error as { retryAfter?: string; headers?: Record<string, string> })?.retryAfter
-            ?? (error as { headers?: Record<string, string> })?.headers?.["retry-after"];
+          const raw =
+            (error as { retryAfter?: string; headers?: Record<string, string> })
+              ?.retryAfter ??
+            (error as { headers?: Record<string, string> })?.headers?.[
+              "retry-after"
+            ];
           if (raw) {
             const seconds = Number(raw);
             if (!Number.isNaN(seconds) && seconds > 0) return seconds * 1000;

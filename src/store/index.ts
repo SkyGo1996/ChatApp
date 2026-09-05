@@ -18,14 +18,14 @@ const blockedPersistConfig = {
   key: "blocked",
   storage: blockedStorage,
   version: 1,
-  migrate: (state: unknown) => Promise.resolve(state as never),
+  migrate: (state: unknown): Promise<unknown> => Promise.resolve(state),
 };
 
 const themePersistConfig = {
   key: "theme",
   storage: themeStorage,
   version: 1,
-  migrate: (state: unknown) => Promise.resolve(state as never),
+  migrate: (state: unknown): Promise<unknown> => Promise.resolve(state),
 };
 
 const rootReducer = combineReducers({
