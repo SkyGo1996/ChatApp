@@ -1,7 +1,13 @@
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { MessagesSquare } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  RefreshControl,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -59,6 +65,7 @@ function keyExtractor(item: Conversation): string {
 
 function ConversationsList() {
   const { theme } = useUnistyles();
+  const insets = useSafeAreaInsets();
   const {
     items,
     isPending,
@@ -72,6 +79,11 @@ function ConversationsList() {
     hasNextPage,
     fetchNextPage,
   } = useConversations();
+  // NativeTabs: Android wraps screens in bottom SafeAreaView. iOS ScrollView
+  // gets auto insets, but FlashList does not — clear the floating glass bar
+  // plus home-indicator inset so the last row isn't covered.
+  const listBottomPad =
+    Platform.OS === "ios" ? insets.bottom : 0;
 
   const retryDisabled = useRetryDisabledUntil(error);
 
@@ -171,7 +183,10 @@ function ConversationsList() {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: listBottomPad },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching && !isFetchingNextPage}
@@ -210,8 +225,6 @@ const styles = StyleSheet.create((theme) => ({
   listContent: {
     // flexGrow so EmptyState (flex:1) can viewport-center when the list is empty
     flexGrow: 1,
-    // Clear floating tab bar (~64) + space(4)
-    paddingBottom: 64 + theme.space(4),
   },
   footer: {
     alignItems: "center",

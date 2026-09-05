@@ -1,43 +1,52 @@
-import { Tabs } from "expo-router";
-import { StyleSheet } from "react-native-unistyles";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { DynamicColorIOS, Platform } from "react-native";
+import { useUnistyles } from "react-native-unistyles";
 
 export default function TabsLayout() {
+  const { theme } = useUnistyles();
+
+  // Liquid Glass tints with the content behind the bar; DynamicColorIOS
+  // keeps icon/label contrast correct across light/dark (Expo Native Tabs docs).
+  const tintColor =
+    Platform.OS === "ios"
+      ? DynamicColorIOS({
+          light: theme.colors.primary,
+          dark: theme.colors.primary,
+        })
+      : theme.colors.primary;
+
+  const inactiveColor =
+    Platform.OS === "ios"
+      ? DynamicColorIOS({
+          light: theme.colors.textSecondary,
+          dark: theme.colors.textSecondary,
+        })
+      : theme.colors.textSecondary;
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: styles.tint.color,
-        tabBarInactiveTintColor: styles.inactiveTint.color,
-        tabBarStyle: styles.tabBar,
-      }}>
-      <Tabs.Screen
-        name="chats"
-        options={{ title: "Chats", headerShown: false }}
-      />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
-    </Tabs>
+    <NativeTabs
+      tintColor={tintColor}
+      iconColor={{ default: inactiveColor, selected: tintColor }}
+      labelStyle={{
+        default: { color: inactiveColor },
+        selected: { color: tintColor },
+      }}
+      // iOS 26+: minimize when scrolling (no-op on older iOS / Android)
+      minimizeBehavior="onScrollDown">
+      <NativeTabs.Trigger name="chats">
+        <NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "message", selected: "message.fill" }}
+          md="chat"
+        />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="settings">
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "gearshape", selected: "gearshape.fill" }}
+          md="settings"
+        />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
-
-const styles = StyleSheet.create((theme) => ({
-  tint: {
-    color: theme.colors.primary,
-  },
-  inactiveTint: {
-    color: theme.colors.textSecondary,
-  },
-  tabBar: {
-    position: "absolute",
-    bottom: theme.space(4),
-    left: theme.space(4),
-    right: theme.space(4),
-    height: 64,
-    borderRadius: theme.radius.sheet,
-    borderTopWidth: 0,
-    // Placeholder pill — GlassBar (ticket 13) replaces with chromeBar recipe
-    backgroundColor: theme.colors.surface2,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-}));
