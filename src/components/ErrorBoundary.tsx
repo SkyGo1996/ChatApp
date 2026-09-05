@@ -5,6 +5,8 @@ import { ErrorRetry } from "./ErrorRetry";
 type Props = {
   children: React.ReactNode;
   onReset?: () => void;
+  retryLabel?: string;
+  retryAccessibilityLabel?: string;
 };
 
 type State = {
@@ -36,8 +38,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <ErrorRetry
           message={this.state.error?.message ?? "Something went wrong."}
           onRetry={this.handleReset}
-          retryLabel="Retry"
-          retryAccessibilityLabel="Retry app"
+          retryLabel={this.props.retryLabel ?? "Retry"}
+          retryAccessibilityLabel={
+            this.props.retryAccessibilityLabel ?? "Retry app"
+          }
         />
       );
     }

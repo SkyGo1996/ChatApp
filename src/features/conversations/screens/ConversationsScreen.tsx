@@ -3,10 +3,12 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
 
-export default function ConversationsScreen() {
-  const [shouldCrash, setShouldCrash] = useState(false);
-  if (shouldCrash) {
-    throw new Error("Dev crash seam — testing ErrorBoundary");
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+function ConversationsContent() {
+  const [shouldCrashScreen, setShouldCrashScreen] = useState(false);
+  if (shouldCrashScreen) {
+    throw new Error("Dev screen crash — testing per-screen ErrorBoundary");
   }
 
   return (
@@ -36,17 +38,56 @@ export default function ConversationsScreen() {
       {__DEV__ ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Crash app (dev)"
-          onPress={() => setShouldCrash(true)}
+          accessibilityLabel="Crash screen (dev)"
+          onPress={() => setShouldCrashScreen(true)}
           style={styles.devCrashButton}>
-          <Text style={styles.devCrashText}>Crash app (dev)</Text>
+          <Text style={styles.devCrashText}>Crash screen (dev)</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
+export default function ConversationsScreen() {
+  const [shouldCrashRoot, setShouldCrashRoot] = useState(false);
+  if (shouldCrashRoot) {
+    throw new Error("Dev root crash — testing Root ErrorBoundary");
+  }
+
+  return (
+    <View style={styles.outer}>
+      <View style={styles.inner}>
+        <ErrorBoundary retryAccessibilityLabel="Retry screen">
+          <ConversationsContent />
+        </ErrorBoundary>
+      </View>
+      {__DEV__ ? (
+        <View style={styles.rootCrashWrap}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Crash app (dev)"
+            onPress={() => setShouldCrashRoot(true)}
+            style={styles.devCrashButton}>
+            <Text style={styles.devCrashText}>Crash app (dev)</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create((theme) => ({
+  outer: {
+    backgroundColor: theme.colors.bg,
+    flex: 1,
+  },
+  inner: {
+    flex: 1,
+  },
+  rootCrashWrap: {
+    alignItems: "center",
+    paddingBottom: theme.spacing(8),
+  },
   container: {
     alignItems: "center",
     backgroundColor: theme.colors.bg,
