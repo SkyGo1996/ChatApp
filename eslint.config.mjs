@@ -1,12 +1,19 @@
 // https://docs.expo.dev/guides/using-eslint/
 // https://typescript-eslint.io/getting-started
 // https://typescript-eslint.io/getting-started/typed-linting
-const { defineConfig } = require("eslint/config");
-const expoConfig = require("eslint-config-expo/flat");
-const eslintPluginPrettierRecommended = require("eslint-plugin-prettier/recommended");
-const js = require("@eslint/js");
-const tseslint = require("typescript-eslint");
-const globals = require("globals");
+// https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/README.md
+// https://github.com/ArnaudBarre/eslint-plugin-react-refresh
+// https://github.com/un-ts/eslint-plugin-import-x
+import js from "@eslint/js";
+import expoConfig from "eslint-config-expo/flat.js";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import { createNodeResolver, importX } from "eslint-plugin-import-x";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import reactHooks from "eslint-plugin-react-hooks";
+import { reactRefresh } from "eslint-plugin-react-refresh";
+import { defineConfig } from "eslint/config";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 /** Path-literal bans shared by feature source (techstack §3 / §10). */
 const pathLiteralRestrictedSyntax = [
@@ -70,19 +77,62 @@ const typeOwnershipRestrictedSyntax = [
   },
 ];
 
-module.exports = defineConfig([
-  expoConfig,
+/**
+ * Strip Expo's bundled react-hooks plugin/rules so we can compose
+ * `reactHooks.configs.flat.recommended` without "Cannot redefine plugin".
+ * @see https://github.com/expo/expo/issues/43758
+ */
+const expoConfigWithoutReactHooks = expoConfig.map((config) => {
+  if (!config.plugins?.["react-hooks"]) {
+    return config;
+  }
+
+  const { "react-hooks": _reactHooks, ...plugins } = config.plugins;
+  const rules = Object.fromEntries(
+    Object.entries(config.rules ?? {}).filter(
+      ([ruleName]) => !ruleName.startsWith("react-hooks/")
+    )
+  );
+
+  return {
+    ...config,
+    plugins,
+    rules,
+  };
+});
+
+export default defineConfig([
+  expoConfigWithoutReactHooks,
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
+  // Explicit react-hooks recommended (includes React Compiler rules in v7).
+  // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/README.md
+  reactHooks.configs.flat.recommended,
+  // Fast Refresh: Expo Router route/layout exports are allowed.
+  // https://github.com/ArnaudBarre/eslint-plugin-react-refresh
+  reactRefresh.configs.recommended({
+    allowExportNames: [
+      "unstable_settings",
+      "ErrorBoundary",
+      "loader",
+      "SuspenseFallback",
+    ],
+  }),
   {
     files: ["**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.js", "*.cjs", "*.mjs", "babel.config.js"],
+          allowDefaultProject: [
+            "*.js",
+            "*.cjs",
+            "*.mjs",
+            "babel.config.js",
+            "eslint.config.mjs",
+          ],
         },
-        tsconfigRootDir: __dirname,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },
@@ -91,7 +141,7 @@ module.exports = defineConfig([
   // https://docs.expo.dev/guides/using-eslint/#flat-config
   {
     files: [
-      "eslint.config.js",
+      "eslint.config.mjs",
       "babel.config.js",
       "metro.config.js",
       "jest.config.js",
@@ -120,22 +170,25 @@ module.exports = defineConfig([
     },
   },
   eslintPluginPrettierRecommended,
-  // Import hygiene + TypeScript resolver for `@/*` (techstack §10 / §13.1–13.2)
+  // Import hygiene via import-x + TypeScript resolver for `@/*` (techstack §10 / §13.1–13.2)
   {
     files: ["src/**/*.{ts,tsx}"],
+    plugins: {
+      "import-x": importX,
+    },
     settings: {
-      "import/resolver": {
-        typescript: {
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver({
           alwaysTryTypes: true,
           project: "./tsconfig.json",
-        },
-        node: true,
-      },
+        }),
+        createNodeResolver(),
+      ],
     },
     rules: {
-      "import/no-cycle": "error",
-      "import/no-self-import": "error",
-      "import/no-useless-path-segments": "error",
+      "import-x/no-cycle": "error",
+      "import-x/no-self-import": "error",
+      "import-x/no-useless-path-segments": "error",
     },
   },
   {
@@ -193,7 +246,22 @@ module.exports = defineConfig([
       // Registry and client are the only places allowed to contain raw path strings / axios import
       "no-restricted-imports": "off",
       "no-restricted-syntax": "off",
+      // Expo's bundled eslint-plugin-import still owns this rule name.
       "import/no-named-as-default-member": "off",
+      "import-x/no-named-as-default-member": "off",
+    },
+  },
+  // Test helpers are not Fast Refresh entry points (export * re-exports, util modules).
+  {
+    files: [
+      "src/test-utils.tsx",
+      "src/test-setup.ts",
+      "src/test-msw.ts",
+      "src/**/*.test.{ts,tsx}",
+      "src/**/__tests__/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
   {
