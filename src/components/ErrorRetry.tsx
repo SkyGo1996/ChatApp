@@ -36,19 +36,19 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: theme.spacing(6),
+    padding: theme.space(6),
   },
   message: {
     color: theme.colors.text,
     fontSize: 16,
-    marginBottom: theme.spacing(4),
+    marginBottom: theme.space(4),
     textAlign: "center",
   },
   button: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing(6),
-    paddingVertical: theme.spacing(3),
+    paddingHorizontal: theme.space(6),
+    paddingVertical: theme.space(3),
   },
   buttonText: {
     color: "#FFFFFF",

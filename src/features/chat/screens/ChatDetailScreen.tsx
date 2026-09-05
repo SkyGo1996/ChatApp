@@ -34,14 +34,14 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: theme.spacing(4),
+    padding: theme.space(4),
   },
   linkButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.md,
-    marginTop: theme.spacing(4),
-    paddingHorizontal: theme.spacing(4),
-    paddingVertical: theme.spacing(3),
+    marginTop: theme.space(4),
+    paddingHorizontal: theme.space(4),
+    paddingVertical: theme.space(3),
   },
   linkText: {
     color: "#FFFFFF",
@@ -49,7 +49,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   subtitle: {
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing(1),
+    marginTop: theme.space(1),
   },
   title: {
     color: theme.colors.text,

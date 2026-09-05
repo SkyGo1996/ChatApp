@@ -1,18 +1,16 @@
 import { StyleSheet, UnistylesRuntime } from "react-native-unistyles";
 
-import type { ThemeMode } from "@/store/slices/themeSlice";
-import { darkTheme, lightTheme } from "./themes";
+import type { ThemeMode } from "@/features/settings/types";
+
+import { darkTheme, lightTheme, type AppTheme } from "./themes";
 
 declare module "react-native-unistyles" {
   interface UnistylesThemes {
-    light: typeof lightTheme;
-    dark: typeof darkTheme;
+    light: AppTheme;
+    dark: AppTheme;
   }
   interface UnistylesBreakpoints {
     xs: number;
-    sm: number;
-    md: number;
-    lg: number;
   }
 }
 
@@ -26,16 +24,25 @@ StyleSheet.configure({
   },
   breakpoints: {
     xs: 0,
-    sm: 375,
-    md: 768,
-    lg: 1024,
   },
 });
 
+function rootBgForMode(mode: ThemeMode): string {
+  if (mode === "light") return lightTheme.colors.bg;
+  if (mode === "dark") return darkTheme.colors.bg;
+  // colorScheme is a Unistyles enum-like; compare as string
+  const scheme = String(UnistylesRuntime.colorScheme);
+  if (scheme === "dark") return darkTheme.colors.bg;
+  return lightTheme.colors.bg;
+}
+
+/**
+ * Apply Theme Mode to Unistyles runtime.
+ * system → adaptive OS following; light/dark → disable adaptive then setTheme.
+ * Also sets root view background to avoid first-frame flash.
+ * Safe to call before React tree mounts. Callers should not touch UnistylesRuntime.
+ */
 export function applyThemeMode(mode: ThemeMode): void {
-  // Per unistyl.es/v3/guides/theming: Toggle adaptive themes via UnistylesRuntime.
-  // Must disable adaptive before manual setTheme; re-enable for system.
-  // Safe to call before React tree mounts.
   try {
     if (mode === "system") {
       UnistylesRuntime.setAdaptiveThemes(true);
@@ -43,6 +50,7 @@ export function applyThemeMode(mode: ThemeMode): void {
       UnistylesRuntime.setAdaptiveThemes(false);
       UnistylesRuntime.setTheme(mode);
     }
+    UnistylesRuntime.setRootViewBackgroundColor(rootBgForMode(mode));
   } catch (e) {
     if (__DEV__) console.warn("[theme] applyThemeMode failed", e);
   }

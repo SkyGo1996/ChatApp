@@ -54,6 +54,35 @@ jest.mock("expo-secure-store", () => {
   };
 });
 
+// 5b. react-native-mmkv in-memory mock (v4 createMMKV API)
+jest.mock("react-native-mmkv", () => {
+  const instances = new Map<string, Map<string, string>>();
+  function createMMKV(config?: { id?: string; encryptionKey?: string }) {
+    const id = config?.id ?? "mmkv.default";
+    if (!instances.has(id)) instances.set(id, new Map());
+    const map = instances.get(id)!;
+    return {
+      getString: (key: string) => map.get(key),
+      set: (key: string, value: string | number | boolean) => {
+        map.set(key, String(value));
+      },
+      remove: (key: string) => {
+        map.delete(key);
+      },
+      clearAll: () => {
+        map.clear();
+      },
+      contains: (key: string) => map.has(key),
+      getAllKeys: () => Array.from(map.keys()),
+    };
+  }
+  return {
+    createMMKV,
+    __instances: instances,
+    __clearAll: () => instances.clear(),
+  };
+});
+
 // 6. Expo Router mocks (auto-mocked via jest-expo, but ensure gesture-handler/reanimated deps)
 // Import expo-router testing-library mocks for integration helpers
 // This augments jest-expo's linking + gesture mocks — optional, best-effort.

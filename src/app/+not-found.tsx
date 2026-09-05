@@ -22,6 +22,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   link: {
     color: theme.colors.primary,
-    marginTop: theme.spacing(3),
+    marginTop: theme.space(3),
   },
 }));

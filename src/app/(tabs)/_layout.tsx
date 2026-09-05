@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { StyleSheet } from "react-native-unistyles";
 
 export default function TabsLayout() {
   return (
@@ -6,18 +7,9 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: "#2563EB",
-        tabBarStyle: {
-          position: "absolute",
-          bottom: 16,
-          left: 16,
-          right: 16,
-          height: 64,
-          borderRadius: 20,
-          borderTopWidth: 0,
-          backgroundColor: "#FFFFFF",
-          // TODO(ticket-01-polish): replace with GlassBar (iOS glassBg+blur / Android surface2+border+elevation2)
-        },
+        tabBarActiveTintColor: styles.tint.color,
+        tabBarInactiveTintColor: styles.inactiveTint.color,
+        tabBarStyle: styles.tabBar,
       }}>
       <Tabs.Screen
         name="chats"
@@ -27,3 +19,25 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create((theme) => ({
+  tint: {
+    color: theme.colors.primary,
+  },
+  inactiveTint: {
+    color: theme.colors.textSecondary,
+  },
+  tabBar: {
+    position: "absolute",
+    bottom: theme.space(4),
+    left: theme.space(4),
+    right: theme.space(4),
+    height: 64,
+    borderRadius: theme.radius.sheet,
+    borderTopWidth: 0,
+    // Placeholder pill — GlassBar (ticket 13) replaces with chromeBar recipe
+    backgroundColor: theme.colors.surface2,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+}));

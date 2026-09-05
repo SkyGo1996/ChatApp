@@ -1,6 +1,6 @@
 {
   "name": "chatapp",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "version": "1.0.0",
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",

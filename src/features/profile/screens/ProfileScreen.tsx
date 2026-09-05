@@ -20,11 +20,11 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: theme.spacing(4),
+    padding: theme.space(4),
   },
   subtitle: {
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing(1),
+    marginTop: theme.space(1),
   },
   title: {
     color: theme.colors.text,

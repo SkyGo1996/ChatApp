@@ -3,6 +3,11 @@ import type { MMKV } from "react-native-mmkv";
 import { createMMKV } from "react-native-mmkv";
 import type { Storage } from "redux-persist";
 
+import { parsePersistedThemeMode, type ThemeMode } from "./persist-recovery";
+
+// Re-export ThemeMode for callers that imported from persist path historically
+export type { ThemeMode };
+
 // ---------------------------------------------------------------------------
 // MMKV instances
 // Blocked (encrypted) + Theme (plain) per techstack.md:51 / §7
@@ -102,16 +107,14 @@ export const blockedStorage: Storage = createMMKVStorage(
 );
 export const themeStorage: Storage = createMMKVStorage(getThemeMMKV, "theme");
 
-// Sync read of persisted theme before redux-persist rehydration completes.
-// Avoids flash: PersistGate hasn't lifted yet, but MMKV already has the value.
-export function getPersistedThemeModeSync(): import("@/store/slices/themeSlice").ThemeMode {
+/**
+ * Sync read of persisted theme before redux-persist rehydration completes.
+ * Parses nested persistoid (mode is JSON-stringified). Invalid → "system".
+ */
+export function getPersistedThemeModeSync(): ThemeMode {
   try {
     const raw = getThemeMMKV().getString("persist:theme");
-    if (!raw) return "system";
-    const parsed = JSON.parse(raw) as unknown;
-    const mode = (parsed as { mode?: unknown })?.mode;
-    if (mode === "light" || mode === "dark" || mode === "system") return mode;
-    return "system";
+    return parsePersistedThemeMode(raw ?? null);
   } catch {
     return "system";
   }

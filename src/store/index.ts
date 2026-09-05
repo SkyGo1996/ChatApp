@@ -9,24 +9,38 @@ import {
   REGISTER,
   REHYDRATE,
   type PersistConfig,
+  type PersistedState,
 } from "redux-persist";
 
 import { blockedStorage, themeStorage } from "./persist";
+import { sanitizeBlockedState, sanitizeThemeState } from "./persist-recovery";
 import blockedReducer, { type BlockedState } from "./slices/blockedSlice";
 import themeReducer, { type ThemeState } from "./slices/themeSlice";
+
+function withPersistMeta<T extends object>(
+  state: PersistedState,
+  sanitized: T
+): T & PersistedState {
+  return {
+    ...sanitized,
+    _persist: state?._persist ?? { version: -1, rehydrated: false },
+  };
+}
 
 const blockedPersistConfig: PersistConfig<BlockedState> = {
   key: "blocked",
   storage: blockedStorage,
   version: 1,
-  migrate: (state) => Promise.resolve(state),
+  migrate: (state) =>
+    Promise.resolve(withPersistMeta(state, sanitizeBlockedState(state))),
 };
 
 const themePersistConfig: PersistConfig<ThemeState> = {
   key: "theme",
   storage: themeStorage,
   version: 1,
-  migrate: (state) => Promise.resolve(state),
+  migrate: (state) =>
+    Promise.resolve(withPersistMeta(state, sanitizeThemeState(state))),
 };
 
 const rootReducer = combineReducers({

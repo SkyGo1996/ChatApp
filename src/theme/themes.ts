@@ -1,38 +1,115 @@
-import { tokens } from "./tokens";
+import {
+  blur,
+  darkColors,
+  elevationAndroid,
+  lightColors,
+  motion,
+  motionExpressive,
+  radius,
+  shadowIOS,
+  space,
+  type,
+} from "./tokens";
+
+const shared = {
+  radius,
+  space,
+  type,
+  motion,
+  motionExpressive,
+  blur,
+} as const;
 
 export const lightTheme = {
-  colors: {
-    bg: "#F8F8FA",
-    surface: "#FFFFFF",
-    surface2: "#F3F4F6",
-    surface3: "#E5E7EB",
-    overlay: "rgba(0,0,0,0.4)",
-    text: "#1A1A1A",
-    textSecondary: "#6B7280",
-    border: "#E5E7EB",
-    primary: "#2563EB",
-    destructive: "#DC2626",
-    bubbleMe: "#2563EB",
-    bubbleThem: "#F1F3F5",
-    inputBg: "#F3F4F6",
-    disabled: "#D1D5DB",
-    glassBg: "rgba(255,255,255,0.72)",
-    glassBorder: "rgba(255,255,255,0.45)",
-    glassTint: "rgba(255,255,255,0.18)",
-  },
-  radius: tokens.radius,
-  spacing: tokens.spacing,
-  gap: tokens.spacing,
+  colors: lightColors,
+  ...shared,
+  shadow: shadowIOS.light,
+  elevation: elevationAndroid.light,
 } as const;
 
 export const darkTheme = {
-  colors: {
-    ...tokens.colors,
-  },
-  radius: tokens.radius,
-  spacing: tokens.spacing,
-  gap: tokens.spacing,
+  colors: darkColors,
+  ...shared,
+  shadow: shadowIOS.dark,
+  elevation: elevationAndroid.dark,
 } as const;
 
-export type AppTheme = typeof lightTheme;
+/**
+ * Structural theme shape shared by light/dark — used by recipes and StyleSheet.
+ * Color values are `string` so either palette is assignable.
+ */
+export type AppTheme = {
+  colors: {
+    bg: string;
+    surface: string;
+    surface2: string;
+    surface3: string;
+    overlay: string;
+    text: string;
+    textSecondary: string;
+    border: string;
+    glassBg: string;
+    glassBorder: string;
+    glassTint: string;
+    primary: string;
+    destructive: string;
+    bubbleMe: string;
+    bubbleThem: string;
+    inputBg: string;
+    disabled: string;
+  };
+  radius: typeof radius;
+  space: typeof space;
+  type: typeof type;
+  motion: typeof motion;
+  motionExpressive: typeof motionExpressive;
+  blur: typeof blur;
+  shadow: (typeof shadowIOS)["light"] | (typeof shadowIOS)["dark"];
+  elevation: { elevation: number };
+};
+
 export type AppThemes = { light: AppTheme; dark: AppTheme };
+
+export const REQUIRED_COLOR_KEYS = [
+  "bg",
+  "surface",
+  "surface2",
+  "surface3",
+  "overlay",
+  "text",
+  "textSecondary",
+  "border",
+  "primary",
+  "destructive",
+  "bubbleMe",
+  "bubbleThem",
+  "inputBg",
+  "disabled",
+  "glassBg",
+  "glassBorder",
+  "glassTint",
+] as const;
+
+export const REQUIRED_RADIUS_KEYS = [
+  "xs",
+  "sm",
+  "md",
+  "lg",
+  "sheet",
+  "xl",
+  "full",
+] as const;
+
+export const REQUIRED_TYPE_KEYS = [
+  "largeTitle",
+  "title1",
+  "title2",
+  "title3",
+  "headline",
+  "body",
+  "callout",
+  "subhead",
+  "footnote",
+  "caption1",
+  "caption2",
+] as const;

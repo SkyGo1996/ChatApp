@@ -86,21 +86,21 @@ const styles = StyleSheet.create((theme) => ({
   },
   rootCrashWrap: {
     alignItems: "center",
-    paddingBottom: theme.spacing(8),
+    paddingBottom: theme.space(8),
   },
   container: {
     alignItems: "center",
     backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: theme.spacing(4),
+    padding: theme.space(4),
   },
   linkButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.md,
-    marginTop: theme.spacing(3),
-    paddingHorizontal: theme.spacing(4),
-    paddingVertical: theme.spacing(3),
+    marginTop: theme.space(3),
+    paddingHorizontal: theme.space(4),
+    paddingVertical: theme.space(3),
   },
   linkText: {
     color: "#FFFFFF",
@@ -108,7 +108,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   subtitle: {
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing(1),
+    marginTop: theme.space(1),
   },
   title: {
     color: theme.colors.text,
@@ -119,9 +119,9 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.colors.destructive,
     borderRadius: theme.radius.md,
     borderWidth: 1,
-    marginTop: theme.spacing(6),
-    paddingHorizontal: theme.spacing(4),
-    paddingVertical: theme.spacing(2.5),
+    marginTop: theme.space(6),
+    paddingHorizontal: theme.space(4),
+    paddingVertical: theme.space(2.5),
   },
   devCrashText: {
     color: theme.colors.destructive,
