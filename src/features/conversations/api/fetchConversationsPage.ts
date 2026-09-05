@@ -44,5 +44,6 @@ export async function fetchConversationsPage(params?: {
   return {
     items: adapted.items.map(toConversation),
     nextCursor: adapted.nextCursor,
+    previousCursor: adapted.previousCursor,
   };
 }

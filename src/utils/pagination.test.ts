@@ -10,9 +10,10 @@ describe("adaptOffsetPage", () => {
     });
     expect(page.items).toEqual([{ id: 1 }, { id: 2 }]);
     expect(page.nextCursor).toBe(2);
+    expect(page.previousCursor).toBeNull();
   });
 
-  test("nextCursor is null on last page", () => {
+  test("nextCursor is null on last page; previousCursor points to prior page", () => {
     const page = adaptOffsetPage({
       total: 22,
       limit: 20,
@@ -21,9 +22,10 @@ describe("adaptOffsetPage", () => {
     });
     expect(page.items).toHaveLength(2);
     expect(page.nextCursor).toBeNull();
+    expect(page.previousCursor).toBe(0);
   });
 
-  test("empty results yields empty items and null cursor", () => {
+  test("empty results yields empty items and null cursors", () => {
     const page = adaptOffsetPage({
       total: 0,
       limit: 20,
@@ -32,9 +34,10 @@ describe("adaptOffsetPage", () => {
     });
     expect(page.items).toEqual([]);
     expect(page.nextCursor).toBeNull();
+    expect(page.previousCursor).toBeNull();
   });
 
-  test("nextCursor uses offset + results.length when mid-collection", () => {
+  test("nextCursor and previousCursor for a mid-collection page", () => {
     const page = adaptOffsetPage({
       total: 60,
       limit: 20,
@@ -42,5 +45,17 @@ describe("adaptOffsetPage", () => {
       results: Array.from({ length: 20 }, (_, i) => ({ id: 21 + i })),
     });
     expect(page.nextCursor).toBe(40);
+    expect(page.previousCursor).toBe(0);
+  });
+
+  test("previousCursor clamps when offset is smaller than limit", () => {
+    const page = adaptOffsetPage({
+      total: 25,
+      limit: 20,
+      offset: 5,
+      results: Array.from({ length: 20 }, (_, i) => ({ id: 6 + i })),
+    });
+    expect(page.previousCursor).toBe(0);
+    expect(page.nextCursor).toBeNull();
   });
 });
