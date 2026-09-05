@@ -6,4 +6,5 @@ export {
 } from "./client";
 export type { ApiError } from "./client";
 export { endpoints } from "./endpoints";
+export { getHeader, normalizeHeaders } from "./headers";
 export { handleRateLimit } from "./rate-limit";

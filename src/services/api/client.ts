@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { getHeader, normalizeHeaders } from "./headers";
 import { handleRateLimit } from "./rate-limit";
 
 export const API_BASE_URL = "https://responserift.dev/api";
@@ -12,17 +13,6 @@ export type ApiError = {
   headers?: Record<string, string> | undefined;
   raw: unknown;
 };
-
-function normalizeHeaders(raw: unknown): Record<string, string> | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof v === "string") out[k] = v;
-    else if (typeof v === "number") out[k] = String(v);
-    else if (Array.isArray(v) && typeof v[0] === "string") out[k] = v[0];
-  }
-  return Object.keys(out).length > 0 ? out : undefined;
-}
 
 function toApiError(error: unknown): ApiError {
   // axios error shape
@@ -38,27 +28,7 @@ function toApiError(error: unknown): ApiError {
 
   const status = ax?.response?.status;
   const headers = normalizeHeaders(ax?.response?.headers);
-  const retryAfter =
-    headers?.["retry-after"] ??
-    (headers
-      ? headers[
-          Object.keys(headers).find((k) => k.toLowerCase() === "retry-after") ??
-            ""
-        ]
-      : undefined);
-
-  // Prefer header lookup case-insensitive for retry-after
-  let resolvedRetryAfter: string | undefined;
-  if (headers) {
-    for (const [k, v] of Object.entries(headers)) {
-      if (k.toLowerCase() === "retry-after") {
-        resolvedRetryAfter = v;
-        break;
-      }
-    }
-  } else if (retryAfter) {
-    resolvedRetryAfter = retryAfter;
-  }
+  const resolvedRetryAfter = getHeader(headers, "retry-after");
 
   const message =
     (ax?.response?.data as { error?: string } | undefined)?.error ??
@@ -92,19 +62,9 @@ client.interceptors.response.use(
     const headers = normalizeHeaders(
       (response as { headers?: unknown }).headers
     );
-    if (headers) {
-      const remaining =
-        headers["x-ratelimit-remaining"] ??
-        (() => {
-          for (const [k, v] of Object.entries(headers)) {
-            if (k.toLowerCase() === "x-ratelimit-remaining") return v;
-          }
-          return undefined;
-        })();
-      if (remaining !== undefined) {
-        // Trigger QA warning without breaking request
-        handleRateLimit({ headers });
-      }
+    if (headers && getHeader(headers, "x-ratelimit-remaining") !== undefined) {
+      // Trigger QA warning without breaking request
+      handleRateLimit({ headers });
     }
     return response;
   },
@@ -134,15 +94,7 @@ export function getRetryAfterMs(
   retryAfter?: string,
   headers?: Record<string, string>
 ): number | undefined {
-  const raw =
-    retryAfter ??
-    (() => {
-      if (!headers) return undefined;
-      for (const [k, v] of Object.entries(headers)) {
-        if (k.toLowerCase() === "retry-after") return v;
-      }
-      return undefined;
-    })();
+  const raw = retryAfter ?? getHeader(headers, "retry-after");
   if (!raw) return undefined;
   const seconds = Number(raw);
   if (!Number.isNaN(seconds) && seconds >= 0) {

@@ -1,26 +1,12 @@
 import { toast } from "sonner-native";
 
+import { getHeader } from "./headers";
+
 export type RateLimitInfo = {
   status?: number | undefined;
   retryAfter?: string | undefined;
   headers?: Record<string, string> | undefined;
 };
-
-function normalizeHeaderKey(key: string): string {
-  return key.toLowerCase();
-}
-
-function getHeader(
-  headers: Record<string, string> | undefined,
-  name: string
-): string | undefined {
-  if (!headers) return undefined;
-  const lower = normalizeHeaderKey(name);
-  for (const [k, v] of Object.entries(headers)) {
-    if (normalizeHeaderKey(k) === lower) return v;
-  }
-  return undefined;
-}
 
 export function handleRateLimit(info: RateLimitInfo): void {
   const headers = info.headers;
