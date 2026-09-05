@@ -19,11 +19,7 @@ const base: Omit<Message, "sender"> = {
 describe("MessageBubble", () => {
   test("renders them bubble with body text and timestamp", async () => {
     await render(
-      <MessageBubble
-        message={{ ...base, sender: "them" }}
-        group="single"
-        marginTop={12}
-      />
+      <MessageBubble message={{ ...base, sender: "them" }} marginTop={12} />
     );
 
     expect(screen.getByText("Hello there")).toBeTruthy();
@@ -35,11 +31,7 @@ describe("MessageBubble", () => {
 
   test("renders me bubble with You accessibility label", async () => {
     await render(
-      <MessageBubble
-        message={{ ...base, sender: "me" }}
-        group="single"
-        marginTop={12}
-      />
+      <MessageBubble message={{ ...base, sender: "me" }} marginTop={12} />
     );
 
     expect(screen.getByText("Hello there")).toBeTruthy();

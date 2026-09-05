@@ -56,10 +56,7 @@ describe("buildChatListItems", () => {
     ) {
       throw new Error("expected message items");
     }
-    expect(messages[0].group).toBe("start");
-    expect(messages[1].group).toBe("end");
     expect(messages[1].marginTop).toBe(space(1));
-    expect(messages[2].group).toBe("single");
     expect(messages[2].marginTop).toBe(space(3));
   });
 

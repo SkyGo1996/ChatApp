@@ -40,7 +40,7 @@ import { useMessages } from "@/features/chat/hooks/useMessages";
 import {
   buildChatListItems,
   type ChatListItem,
-} from "@/features/chat/lib/buildChatListItems";
+} from "@/features/chat/screens/buildChatListItems";
 
 const SCROLL_FAB_THRESHOLD_PX = 200;
 
@@ -88,11 +88,7 @@ const renderChatItem: ListRenderItem<ChatListItem> = ({ item }) => {
     return <DateSeparator label={item.label} />;
   }
   return (
-    <MessageBubble
-      message={item.message}
-      group={item.group}
-      marginTop={item.marginTop}
-    />
+    <MessageBubble message={item.message} marginTop={item.marginTop} />
   );
 };
 

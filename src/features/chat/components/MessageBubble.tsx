@@ -3,20 +3,18 @@ import { StyleSheet } from "react-native-unistyles";
 
 import { formatMessageTimestamp } from "@/utils/datetime";
 
-import type { MessageGroupPosition } from "@/features/chat/lib/buildChatListItems";
 import type { Message } from "@/features/chat/types";
 
 type Props = {
   message: Message;
-  group: MessageGroupPosition;
   marginTop: number;
 };
 
 /**
  * Chat bubble: left for Contact (`them`), right for `me`.
- * Group position is reserved for spacing (applied via marginTop from builder).
+ * Same-sender spacing is applied via marginTop from the list builder.
  */
-export function MessageBubble({ message, group: _group, marginTop }: Props) {
+export function MessageBubble({ message, marginTop }: Props) {
   const isMe = message.sender === "me";
   const timestamp = formatMessageTimestamp(message.createdAt);
   const sending = message.status === "sending";

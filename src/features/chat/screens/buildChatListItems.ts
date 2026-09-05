@@ -5,13 +5,10 @@ import { formatDateSeparator } from "@/utils/datetime";
 
 import type { Message } from "@/features/chat/types";
 
-export type MessageGroupPosition = "single" | "start" | "middle" | "end";
-
 export type ChatListMessageItem = {
   type: "message";
   key: string;
   message: Message;
-  group: MessageGroupPosition;
   /** Top margin: space(1) within a group, space(3) between groups / after separator. */
   marginTop: number;
 };
@@ -33,22 +30,9 @@ function dayKey(value: string): string | null {
   return format(date, "yyyy-MM-dd");
 }
 
-function groupPosition(
-  prev: Message | undefined,
-  current: Message,
-  next: Message | undefined
-): MessageGroupPosition {
-  const samePrev = prev !== undefined && prev.sender === current.sender;
-  const sameNext = next !== undefined && next.sender === current.sender;
-  if (samePrev && sameNext) return "middle";
-  if (samePrev) return "end";
-  if (sameNext) return "start";
-  return "single";
-}
-
 /**
  * Build FlashList rows from chronological Messages (oldest → newest).
- * Inserts date separators on day change and tags same-sender group spacing.
+ * Inserts date separators on day change and applies same-sender group spacing.
  * Does not reverse the array.
  */
 export function buildChatListItems(messages: Message[]): ChatListItem[] {
@@ -58,7 +42,6 @@ export function buildChatListItems(messages: Message[]): ChatListItem[] {
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i]!;
     const prev = i > 0 ? messages[i - 1] : undefined;
-    const next = i < messages.length - 1 ? messages[i + 1] : undefined;
 
     const day = dayKey(message.createdAt);
     if (day !== null && day !== lastDay) {
@@ -93,7 +76,6 @@ export function buildChatListItems(messages: Message[]): ChatListItem[] {
       type: "message",
       key: `msg-${String(message.id)}`,
       message,
-      group: groupPosition(prev, message, next),
       marginTop,
     });
   }
