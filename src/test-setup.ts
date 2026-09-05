@@ -129,6 +129,33 @@ jest.mock("react-native-svg", () => {
   };
 });
 
+// 9. expo-haptics mock — no native Taptic/Vibrator in Jest
+jest.mock("expo-haptics", () => ({
+  impactAsync: jest.fn(() => Promise.resolve()),
+  notificationAsync: jest.fn(() => Promise.resolve()),
+  selectionAsync: jest.fn(() => Promise.resolve()),
+  ImpactFeedbackStyle: {
+    Light: "light",
+    Medium: "medium",
+    Heavy: "heavy",
+    Rigid: "rigid",
+    Soft: "soft",
+  },
+  NotificationFeedbackType: {
+    Success: "success",
+    Warning: "warning",
+    Error: "error",
+  },
+}));
+
+// 10. FlashList → FlatList for Jest (v2 recycling not needed in unit tests)
+jest.mock("@shopify/flash-list", () => {
+  const { FlatList } = require("react-native") as typeof import("react-native");
+  return {
+    FlashList: FlatList,
+  };
+});
+
 // RNTL v14 built-in matchers: no need for @testing-library/jest-native/extend-expect
 // Importing from @testing-library/react-native auto-extends expect.
 // Keep explicit import for coverage if pure import is avoided in some tests.

@@ -49,6 +49,7 @@ module.exports = defineConfig([
     files: [
       "src/test-setup.ts",
       "src/test-utils.tsx",
+      "src/test-msw.ts",
       "src/**/*.test.{ts,tsx}",
       "src/**/__tests__/**/*.{ts,tsx}",
     ],
@@ -73,7 +74,8 @@ module.exports = defineConfig([
           ],
           patterns: [
             {
-              group: ["**/services/api/endpoints*"],
+              // Ban relative registry imports; `**/endpoints*` also matches the `@/` alias.
+              regex: "^\\..*services/api/endpoints",
               message:
                 "Import path strings only via `import { endpoints } from '@/services/api/endpoints'`.",
             },
