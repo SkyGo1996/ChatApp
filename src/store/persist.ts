@@ -92,6 +92,21 @@ function createMMKVStorage(getMMKV: () => MMKV, label: string): Storage {
 export const blockedStorage: Storage = createMMKVStorage(getBlockedMMKV, "blocked");
 export const themeStorage: Storage = createMMKVStorage(getThemeMMKV, "theme");
 
+// Sync read of persisted theme before redux-persist rehydration completes.
+// Avoids flash: PersistGate hasn't lifted yet, but MMKV already has the value.
+export function getPersistedThemeModeSync(): import("@/store/slices/themeSlice").ThemeMode {
+  try {
+    const raw = getThemeMMKV().getString("persist:theme");
+    if (!raw) return "system";
+    const parsed = JSON.parse(raw) as unknown;
+    const mode = (parsed as { mode?: unknown })?.mode;
+    if (mode === "light" || mode === "dark" || mode === "system") return mode;
+    return "system";
+  } catch {
+    return "system";
+  }
+}
+
 // Expose direct instances for debugging / future migrations
 export function getRawBlockedMMKV(): MMKV {
   return getBlockedMMKV();

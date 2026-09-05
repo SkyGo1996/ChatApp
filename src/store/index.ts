@@ -34,7 +34,15 @@ export const store = configureStore({
     }),
 });
 
-export const persistor = persistStore(store);
+// Defer persistor creation until after initBlockedStorage() has swapped MMKV
+// to the encrypted instance. Eager `persistStore(store)` would hydrate blocked
+// from the plain fallback MMKV and never re-read the encrypted one.
+export let persistor: ReturnType<typeof persistStore> | null = null;
+
+export function ensurePersistor(): ReturnType<typeof persistStore> {
+  if (!persistor) persistor = persistStore(store);
+  return persistor;
+}
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
