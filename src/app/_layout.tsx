@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ensurePersistor, store } from "@/store";
 import { getPersistedThemeModeSync, initBlockedStorage } from "@/store/persist";
+import { Toaster } from "sonner-native";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -104,6 +105,7 @@ export default function RootLayout() {
                 <Stack.Screen name="+not-found" />
               </Stack>
             </InnerProviders>
+            <Toaster />
           </KeyboardProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

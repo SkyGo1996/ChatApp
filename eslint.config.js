@@ -58,6 +58,74 @@ module.exports = defineConfig([
   },
   eslintPluginPrettierRecommended,
   {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/services/api/endpoints.ts", "src/services/api/client.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "axios",
+              message:
+                "Import axios only in src/services/api/client.ts — use `import { client } from '@/services/api/client'` elsewhere.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/services/api/endpoints*"],
+              message:
+                "Import path strings only via `import { endpoints } from '@/services/api/endpoints'`.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'Literal[value="/users"]',
+          message:
+            'Do not use raw path literal "/users" — use endpoints.conversations.list / endpoints.profile.detail(id).',
+        },
+        {
+          selector: 'Literal[value="/posts"]',
+          message:
+            'Do not use raw path literal "/posts" — use endpoints.chat.send / endpoints.chat.messages(id).',
+        },
+        {
+          selector: 'Literal[value="/api"]',
+          message:
+            'Do not use raw "/api" literal — use endpoints registry + client baseURL.',
+        },
+        {
+          selector: 'TemplateLiteral > TemplateElement[value.raw="/users"]',
+          message:
+            'Do not interpolate raw "/users" — use endpoints.profile.detail(id).',
+        },
+        {
+          selector: 'TemplateLiteral > TemplateElement[value.raw="/posts"]',
+          message:
+            'Do not interpolate raw "/posts" — use endpoints.chat registry.',
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/services/api/endpoints.ts", "src/services/api/client.ts"],
+    rules: {
+      // Registry and client are the only places allowed to contain raw path strings / axios import
+      "no-restricted-imports": "off",
+      "no-restricted-syntax": "off",
+      "import/no-named-as-default-member": "off",
+    },
+  },
+  {
+    files: ["src/services/api/rate-limit.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
     ignores: ["dist/*", ".expo/*"],
   },
 ]);

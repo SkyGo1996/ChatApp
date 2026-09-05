@@ -68,6 +68,38 @@ try {
   }
 }
 
+// 7. sonner-native mock — JS-only toast, no native module
+jest.mock("sonner-native", () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn(),
+    dismiss: jest.fn(),
+  },
+  Toaster: () => null,
+}));
+
+// 8. react-native-svg mock (sonner-native peer — avoid native SVG in jest)
+jest.mock("react-native-svg", () => {
+  const React = require("react") as typeof import("react");
+  const Svg = (props: unknown) =>
+    React.createElement("Svg", props as Record<string, unknown>);
+  return {
+    __esModule: true,
+    default: Svg,
+    Svg,
+    Path: (props: unknown) =>
+      React.createElement("Path", props as Record<string, unknown>),
+    Circle: (props: unknown) =>
+      React.createElement("Circle", props as Record<string, unknown>),
+    Rect: (props: unknown) =>
+      React.createElement("Rect", props as Record<string, unknown>),
+    G: (props: unknown) =>
+      React.createElement("G", props as Record<string, unknown>),
+  };
+});
+
 // RNTL v14 built-in matchers: no need for @testing-library/jest-native/extend-expect
 // Importing from @testing-library/react-native auto-extends expect.
 // Keep explicit import for coverage if pure import is avoided in some tests.
