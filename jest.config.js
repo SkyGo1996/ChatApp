@@ -14,6 +14,6 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
   transformIgnorePatterns: [
-    "node_modules/(?!(jest-)?react-native|@react-native|expo|@expo|@unimodules|unimodules|sentry-expo|native-base|react-clone-referenced-element|react-native-unistyles|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-gesture-handler|react-native-screens|react-native-keyboard-controller|react-native-svg|sonner-native|@shopify/flash-list|@tanstack|redux-persist|axios|msw|until-async|lucide-react-native)/",
+    "node_modules/(?!(jest-)?react-native|@react-native|expo|@expo|@unimodules|unimodules|sentry-expo|native-base|react-clone-referenced-element|react-native-unistyles|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-gesture-handler|react-native-screens|react-native-keyboard-controller|react-native-svg|sonner-native|@shopify/flash-list|@tanstack|redux-persist|axios|msw|until-async|lucide-react-native|date-fns)/",
   ],
 };
