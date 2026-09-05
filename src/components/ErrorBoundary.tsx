@@ -42,6 +42,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           retryAccessibilityLabel={
             this.props.retryAccessibilityLabel ?? "Retry app"
           }
+          hapticOnRetry={false}
         />
       );
     }

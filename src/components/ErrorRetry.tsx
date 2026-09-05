@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { Pressable, Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
 
@@ -6,6 +7,10 @@ type Props = {
   onRetry?: () => void;
   retryLabel?: string;
   retryAccessibilityLabel?: string;
+  /** When true, Retry is visible but non-interactive (e.g. 429 window). */
+  retryDisabled?: boolean;
+  /** Light haptic on Retry tap. Default true; ErrorBoundary sets false. */
+  hapticOnRetry?: boolean;
 };
 
 export function ErrorRetry({
@@ -13,17 +18,35 @@ export function ErrorRetry({
   onRetry,
   retryLabel = "Retry",
   retryAccessibilityLabel,
+  retryDisabled = false,
+  hapticOnRetry = true,
 }: Props) {
+  const handleRetry = () => {
+    if (retryDisabled || !onRetry) return;
+    if (hapticOnRetry) {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onRetry();
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.message}>{message}</Text>
       {onRetry ? (
         <Pressable
-          onPress={onRetry}
+          onPress={handleRetry}
+          disabled={retryDisabled}
           accessibilityLabel={retryAccessibilityLabel ?? retryLabel}
           accessibilityRole="button"
-          style={styles.button}>
-          <Text style={styles.buttonText}>{retryLabel}</Text>
+          accessibilityState={{ disabled: retryDisabled }}
+          style={[styles.button, retryDisabled && styles.buttonDisabled]}>
+          <Text
+            style={[
+              styles.buttonText,
+              retryDisabled && styles.buttonTextDisabled,
+            ]}>
+            {retryLabel}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -39,7 +62,7 @@ const styles = StyleSheet.create((theme) => ({
     padding: theme.space(6),
   },
   message: {
-    color: theme.colors.text,
+    color: theme.colors.destructive,
     fontSize: 16,
     marginBottom: theme.space(4),
     textAlign: "center",
@@ -47,11 +70,20 @@ const styles = StyleSheet.create((theme) => ({
   button: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.md,
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: theme.space(6),
     paddingVertical: theme.space(3),
+  },
+  buttonDisabled: {
+    backgroundColor: theme.colors.disabled,
   },
   buttonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+    textAlign: "center",
+  },
+  buttonTextDisabled: {
+    color: theme.colors.textSecondary,
   },
 }));
