@@ -208,6 +208,8 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   listContent: {
+    // flexGrow so EmptyState (flex:1) can viewport-center when the list is empty
+    flexGrow: 1,
     // Clear floating tab bar (~64) + space(4)
     paddingBottom: 64 + theme.space(4),
   },

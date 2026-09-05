@@ -8,6 +8,7 @@ import {
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
+import type { TestInstance } from "test-renderer";
 
 import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
@@ -112,7 +113,15 @@ describe("ConversationsScreen", () => {
     expect(await screen.findByText("User 1")).toBeTruthy();
 
     mode = "fail500";
-    await qc.refetchQueries({ queryKey: ["conversations"] });
+    const list = screen.getByTestId("conversations-list");
+    const refreshControl = list.children.find(
+      (child): child is TestInstance =>
+        typeof child !== "string" && child.type === "RCTRefreshControl"
+    );
+    if (!refreshControl) {
+      throw new Error("Expected RCTRefreshControl under conversations-list");
+    }
+    await fireEvent(refreshControl, "refresh");
 
     await waitFor(() => {
       expect(screen.getByText("Something went wrong.")).toBeTruthy();
@@ -128,16 +137,38 @@ describe("ConversationsScreen", () => {
     expect(await screen.findByText("User 1")).toBeTruthy();
 
     mode = "next429";
-    fireEvent(screen.getByTestId("conversations-list"), "onEndReached");
+    await fireEvent(screen.getByTestId("conversations-list"), "onEndReached");
 
     await waitFor(() => {
       expect(screen.getByText("Too many requests — try again")).toBeTruthy();
     });
 
     const retry = screen.getByLabelText("Retry conversations");
-    expect(retry.props.accessibilityState?.disabled).toBe(true);
-    fireEvent.press(retry);
-    expect(retry.props.accessibilityState?.disabled).toBe(true);
+    expect(retry).toBeDisabled();
+    await fireEvent.press(retry);
+    expect(retry).toBeDisabled();
     expect(screen.getByText("User 1")).toBeTruthy();
+  });
+
+  test("shows centered empty copy when collection is empty", async () => {
+    server.use(
+      http.get(usersUrl, () =>
+        HttpResponse.json({
+          total: 0,
+          limit: 20,
+          offset: 0,
+          results: [],
+        })
+      )
+    );
+    const qc = createTestQueryClient();
+    await render(<ConversationsScreen />, { wrapper: wrapperFor(qc) });
+
+    expect(await screen.findByText("No conversations")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "When you start chatting, conversations will show up here."
+      )
+    ).toBeTruthy();
   });
 });
