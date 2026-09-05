@@ -1,3 +1,4 @@
+import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import type { MMKV } from "react-native-mmkv";
 import { createMMKV } from "react-native-mmkv";
@@ -35,8 +36,10 @@ export async function initBlockedStorage(): Promise<void> {
   try {
     let key = await SecureStore.getItemAsync("mmkv-key");
     if (!key) {
-      const random = `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-      key = random;
+      // Spec: techstack §7 — encryptionKey via Crypto.getRandomBytes (hex for MMKV string key).
+      // Do not rotate an existing SecureStore key — that would lock encrypted MMKV data.
+      const bytes = Crypto.getRandomBytes(32);
+      key = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
       await SecureStore.setItemAsync("mmkv-key", key);
     }
     try {
