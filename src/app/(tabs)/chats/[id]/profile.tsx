@@ -1,20 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import ProfileScreen from "@/features/profile/screens/ProfileScreen";
 
-export default function ProfileScreen() {
+export default function ProfileRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-
-  return (
-    <View style={styles.container}>
-      <Text>Profile {id}</Text>
-    </View>
-  );
+  return <ProfileScreen contactId={id ?? ""} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-});

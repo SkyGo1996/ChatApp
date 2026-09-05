@@ -5,5 +5,11 @@ export const unstable_settings = {
 };
 
 export default function ChatsLayout() {
-  return <Stack />;
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ title: "Chats" }} />
+      <Stack.Screen name="[id]" options={{ title: "Chat" }} />
+      <Stack.Screen name="[id]/profile" options={{ title: "Profile" }} />
+    </Stack>
+  );
 }

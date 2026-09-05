@@ -1,20 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import ChatDetailScreen from "@/features/chat/screens/ChatDetailScreen";
 
-export default function ChatDetailScreen() {
+export default function ChatDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-
-  return (
-    <View style={styles.container}>
-      <Text>Chat {id}</Text>
-    </View>
-  );
+  return <ChatDetailScreen conversationId={id ?? ""} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-});
