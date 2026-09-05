@@ -21,7 +21,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
@@ -276,14 +275,12 @@ export default function ChatDetailScreen({
     chrome.elevation,
   ]);
 
-  const body = (
-    <ErrorBoundary retryAccessibilityLabel="Retry screen">
-      <MessagesList conversationId={conversationId} />
-    </ErrorBoundary>
-  );
-
   if (reduceMotion) {
-    return <View style={styles.outer}>{body}</View>;
+    return (
+      <View style={styles.outer}>
+        <MessagesList conversationId={conversationId} />
+      </View>
+    );
   }
 
   return (
@@ -293,7 +290,7 @@ export default function ChatDetailScreen({
         opacity: motion.fadeUp.from.opacity,
         transform: [{ translateY: motion.fadeUp.from.translateY }],
       })}>
-      {body}
+      <MessagesList conversationId={conversationId} />
     </Animated.View>
   );
 }
