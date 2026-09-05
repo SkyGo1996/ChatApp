@@ -17,7 +17,7 @@ import { queryClient } from "@/lib/query-client";
 import { ensurePersistor, store } from "@/store";
 import { getPersistedThemeModeSync, initBlockedStorage } from "@/store/persist";
 
-SplashScreen.preventAutoHideAsync()
+void SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
   initialRouteName: "(tabs)",
@@ -25,7 +25,9 @@ export const unstable_settings = {
 
 function InnerProviders({ children }: { children: ReactNode }) {
   const [appIsReady, setAppIsReady] = useState(false);
-  const [persistor, setPersistor] = useState<ReturnType<typeof ensurePersistor> | null>(null);
+  const [persistor, setPersistor] = useState<ReturnType<
+    typeof ensurePersistor
+  > | null>(null);
 
   useEffect(() => {
     async function prepare() {
@@ -71,7 +73,10 @@ function InnerProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor} onBeforeLift={handleBeforeLift}>
+        <PersistGate
+          loading={null}
+          persistor={persistor}
+          onBeforeLift={handleBeforeLift}>
           {children}
         </PersistGate>
       </Provider>

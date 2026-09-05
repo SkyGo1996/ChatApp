@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { createMMKV } from "react-native-mmkv";
 import type { MMKV } from "react-native-mmkv";
+import { createMMKV } from "react-native-mmkv";
 import type { Storage } from "redux-persist";
 
 // ---------------------------------------------------------------------------
@@ -37,11 +37,15 @@ export async function initBlockedStorage(): Promise<void> {
     try {
       blockedMMKV = createMMKV({ id: "blocked-mmkv-enc", encryptionKey: key });
     } catch {
-      if (__DEV__) console.warn("[persist] MMKV encryption not supported, using plain");
+      if (__DEV__)
+        console.warn("[persist] MMKV encryption not supported, using plain");
       blockedMMKV = createMMKV({ id: "blocked-mmkv" });
     }
   } catch {
-    if (__DEV__) console.warn("[persist] SecureStore unavailable, blocked uses plain MMKV");
+    if (__DEV__)
+      console.warn(
+        "[persist] SecureStore unavailable, blocked uses plain MMKV"
+      );
     blockedMMKV = createMMKV({ id: "blocked-mmkv" });
   }
 }
@@ -59,7 +63,10 @@ function createMMKVStorage(getMMKV: () => MMKV, label: string): Storage {
           try {
             JSON.parse(raw);
           } catch {
-            if (__DEV__) console.warn(`[persist:${label}] corrupt JSON for ${key}, clearing`);
+            if (__DEV__)
+              console.warn(
+                `[persist:${label}] corrupt JSON for ${key}, clearing`
+              );
             getMMKV().remove(key);
             return Promise.resolve(null);
           }
@@ -89,7 +96,10 @@ function createMMKVStorage(getMMKV: () => MMKV, label: string): Storage {
   };
 }
 
-export const blockedStorage: Storage = createMMKVStorage(getBlockedMMKV, "blocked");
+export const blockedStorage: Storage = createMMKVStorage(
+  getBlockedMMKV,
+  "blocked"
+);
 export const themeStorage: Storage = createMMKVStorage(getThemeMMKV, "theme");
 
 // Sync read of persisted theme before redux-persist rehydration completes.

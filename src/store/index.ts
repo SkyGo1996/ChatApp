@@ -1,5 +1,14 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { persistReducer, persistStore, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  persistReducer,
+  persistStore,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+} from "redux-persist";
 
 import { blockedStorage, themeStorage } from "./persist";
 import blockedReducer from "./slices/blockedSlice";

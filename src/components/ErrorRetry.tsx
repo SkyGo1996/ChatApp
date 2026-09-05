@@ -22,8 +22,7 @@ export function ErrorRetry({
           onPress={onRetry}
           accessibilityLabel={retryAccessibilityLabel ?? retryLabel}
           accessibilityRole="button"
-          style={styles.button}
-        >
+          style={styles.button}>
           <Text style={styles.buttonText}>{retryLabel}</Text>
         </Pressable>
       ) : null}

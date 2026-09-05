@@ -1,7 +1,7 @@
 import { StyleSheet, UnistylesRuntime } from "react-native-unistyles";
 
-import { darkTheme, lightTheme } from "./themes";
 import type { ThemeMode } from "@/store/slices/themeSlice";
+import { darkTheme, lightTheme } from "./themes";
 
 declare module "react-native-unistyles" {
   interface UnistylesThemes {

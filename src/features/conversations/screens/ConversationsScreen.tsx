@@ -13,21 +13,23 @@ export default function ConversationsScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Chats</Text>
       <Text style={styles.subtitle}>Conversations placeholder</Text>
-      <Link href={{ pathname: "/(tabs)/chats/[id]", params: { id: "1" } }} asChild>
+      <Link
+        href={{ pathname: "/(tabs)/chats/[id]", params: { id: "1" } }}
+        asChild>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open chat 1"
-          style={styles.linkButton}
-        >
+          style={styles.linkButton}>
           <Text style={styles.linkText}>Open Chat 1 →</Text>
         </Pressable>
       </Link>
-      <Link href={{ pathname: "/(tabs)/chats/[id]", params: { id: "2" } }} asChild>
+      <Link
+        href={{ pathname: "/(tabs)/chats/[id]", params: { id: "2" } }}
+        asChild>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open chat 2"
-          style={styles.linkButton}
-        >
+          style={styles.linkButton}>
           <Text style={styles.linkText}>Open Chat 2 →</Text>
         </Pressable>
       </Link>
@@ -36,8 +38,7 @@ export default function ConversationsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Crash app (dev)"
           onPress={() => setShouldCrash(true)}
-          style={styles.devCrashButton}
-        >
+          style={styles.devCrashButton}>
           <Text style={styles.devCrashText}>Crash app (dev)</Text>
         </Pressable>
       ) : null}

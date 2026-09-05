@@ -18,9 +18,11 @@ export default function TabsLayout() {
           backgroundColor: "#FFFFFF",
           // TODO(ticket-01-polish): replace with GlassBar (iOS glassBg+blur / Android surface2+border+elevation2)
         },
-      }}
-    >
-      <Tabs.Screen name="chats" options={{ title: "Chats", headerShown: false }} />
+      }}>
+      <Tabs.Screen
+        name="chats"
+        options={{ title: "Chats", headerShown: false }}
+      />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />
     </Tabs>
   );

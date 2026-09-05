@@ -1,8 +1,9 @@
 // https://docs.expo.dev/guides/using-eslint/
 // https://typescript-eslint.io/getting-started
 // https://typescript-eslint.io/getting-started/typed-linting
-const { defineConfig } = require('eslint/config');
+const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
+const eslintPluginPrettierRecommended = require("eslint-plugin-prettier/recommended");
 const js = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const globals = require("globals");
@@ -36,7 +37,8 @@ module.exports = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
     },
   },
+  eslintPluginPrettierRecommended,
   {
     ignores: ["dist/*", ".expo/*"],
-  }
+  },
 ]);

@@ -12,14 +12,15 @@ export default function ChatDetailScreen({ conversationId }: Props) {
       <Text style={styles.title}>Chat {conversationId}</Text>
       <Text style={styles.subtitle}>Chat detail placeholder</Text>
       <Link
-        href={{ pathname: "/(tabs)/chats/[id]/profile", params: { id: conversationId || "1" } }}
-        asChild
-      >
+        href={{
+          pathname: "/(tabs)/chats/[id]/profile",
+          params: { id: conversationId || "1" },
+        }}
+        asChild>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="View profile"
-          style={styles.linkButton}
-        >
+          style={styles.linkButton}>
           <Text style={styles.linkText}>View Profile →</Text>
         </Pressable>
       </Link>
