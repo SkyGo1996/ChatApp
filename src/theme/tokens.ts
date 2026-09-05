@@ -1,0 +1,32 @@
+export const tokens = {
+  colors: {
+    bg: "#111114",
+    surface: "#1C1C1F",
+    surface2: "#27272A",
+    surface3: "#3F3F46",
+    overlay: "rgba(0,0,0,0.6)",
+    text: "#E5E5EA",
+    textSecondary: "#9CA3AF",
+    border: "#2A2A2D",
+    primary: "#60A5FA",
+    destructive: "#F87171",
+    bubbleMe: "#2563EB",
+    bubbleThem: "#27272A",
+    inputBg: "#1F2937",
+    disabled: "#4B5563",
+    // iOS-only glass tokens (fallbacks on Android via surface)
+    glassBg: "rgba(28,28,31,0.72)",
+    glassBorder: "rgba(255,255,255,0.12)",
+    glassTint: "rgba(255,255,255,0.06)",
+  },
+  radius: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    sheet: 20,
+    xl: 28,
+    full: 9999,
+  },
+  spacing: (n: number) => n * 4,
+} as const;

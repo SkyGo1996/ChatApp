@@ -1,5 +1,6 @@
 import { Link } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { StyleSheet } from "react-native-unistyles";
 
 export default function ConversationsScreen() {
   return (
@@ -28,30 +29,32 @@ export default function ConversationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     alignItems: "center",
+    backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: 16,
+    padding: theme.spacing(4),
   },
   linkButton: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    marginTop: theme.spacing(3),
+    paddingHorizontal: theme.spacing(4),
+    paddingVertical: theme.spacing(3),
   },
   linkText: {
     color: "#FFFFFF",
     fontWeight: "600",
   },
   subtitle: {
-    color: "#6B7280",
-    marginTop: 4,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing(1),
   },
   title: {
+    color: theme.colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
-});
+}));

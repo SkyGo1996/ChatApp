@@ -1,5 +1,6 @@
 import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { StyleSheet } from "react-native-unistyles";
 
 export default function NotFound() {
   return (
@@ -12,13 +13,15 @@ export default function NotFound() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     alignItems: "center",
+    backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
   },
   link: {
-    marginTop: 12,
+    color: theme.colors.primary,
+    marginTop: theme.spacing(3),
   },
-});
+}));

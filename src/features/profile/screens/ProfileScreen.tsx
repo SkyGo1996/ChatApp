@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { StyleSheet } from "react-native-unistyles";
 
 type Props = {
   contactId: string;
@@ -13,19 +14,21 @@ export default function ProfileScreen({ contactId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     alignItems: "center",
+    backgroundColor: theme.colors.bg,
     flex: 1,
     justifyContent: "center",
-    padding: 16,
+    padding: theme.spacing(4),
   },
   subtitle: {
-    color: "#6B7280",
-    marginTop: 4,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing(1),
   },
   title: {
+    color: theme.colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
-});
+}));
