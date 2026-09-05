@@ -1,6 +1,23 @@
-import { FlashList, type ListRenderItem } from "@shopify/flash-list";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import {
+  FlashList,
+  type FlashListRef,
+  type ListRenderItem,
+} from "@shopify/flash-list";
+import { useNavigation } from "expo-router";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  View,
+} from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
@@ -8,21 +25,29 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
+import { chromeHeader } from "@/theme/recipes";
 import { motion } from "@/theme/tokens";
 
 import {
+  ChatHeaderTitle,
   DateSeparator,
   MessageBubble,
   MessageShimmer,
+  ScrollToBottomFAB,
 } from "@/features/chat/components";
+import { useContactIdentity } from "@/features/chat/hooks/useContactIdentity";
 import { useMessages } from "@/features/chat/hooks/useMessages";
 import {
   buildChatListItems,
   type ChatListItem,
 } from "@/features/chat/lib/buildChatListItems";
 
+const SCROLL_FAB_THRESHOLD_PX = 200;
+
 type Props = {
   conversationId: string;
+  contactName?: string | undefined;
+  contactAvatar?: string | undefined;
 };
 
 function messagesErrorMessage(error: ApiError | null): string {
@@ -81,6 +106,10 @@ function getItemType(item: ChatListItem): string {
 
 function MessagesList({ conversationId }: { conversationId: string }) {
   const { theme } = useUnistyles();
+  const reduceMotion = useReduceMotion();
+  const listRef = useRef<FlashListRef<ChatListItem>>(null);
+  const [fabVisible, setFabVisible] = useState(false);
+
   const {
     items,
     isPending,
@@ -110,6 +139,21 @@ function MessagesList({ conversationId }: { conversationId: string }) {
     isFetchPreviousPageError,
     fetchPreviousPage,
   ]);
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+      setFabVisible(distanceFromBottom > SCROLL_FAB_THRESHOLD_PX);
+    },
+    []
+  );
+
+  const scrollToBottom = useCallback(() => {
+    listRef.current?.scrollToEnd({ animated: !reduceMotion });
+  }, [reduceMotion]);
 
   const listHeader = useCallback(() => {
     if (isFetchPreviousPageError && items.length > 0) {
@@ -158,6 +202,7 @@ function MessagesList({ conversationId }: { conversationId: string }) {
   return (
     <View style={styles.listWrap}>
       <FlashList
+        ref={listRef}
         testID="messages-list"
         data={listItems}
         renderItem={renderChatItem}
@@ -165,20 +210,75 @@ function MessagesList({ conversationId }: { conversationId: string }) {
         getItemType={getItemType}
         onStartReached={onStartReached}
         onStartReachedThreshold={0.5}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
+        contentInsetAdjustmentBehavior="automatic"
         maintainVisibleContentPosition={{
           autoscrollToBottomThreshold: 0.2,
           startRenderingFromBottom: true,
         }}
         style={{ backgroundColor: theme.colors.bg }}
       />
+      <ScrollToBottomFAB visible={fabVisible} onPress={scrollToBottom} />
     </View>
   );
 }
 
-export default function ChatDetailScreen({ conversationId }: Props) {
+export default function ChatDetailScreen({
+  conversationId,
+  contactName,
+  contactAvatar,
+}: Props) {
+  const navigation = useNavigation();
+  const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
+  const contact = useContactIdentity(conversationId, {
+    name: contactName,
+    avatar: contactAvatar,
+  });
+  const chrome = chromeHeader(theme);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <ChatHeaderTitle
+          conversationId={conversationId}
+          name={contact.name}
+          avatar={contact.avatar}
+        />
+      ),
+      ...(Platform.OS === "ios"
+        ? {
+            headerTransparent: true,
+            headerBlurEffect: "systemChromeMaterial",
+            // Avoid stacking iOS 26+ automatic scrollEdgeEffects with headerBlurEffect.
+            scrollEdgeEffects: {
+              top: "hidden",
+              bottom: "hidden",
+              left: "hidden",
+              right: "hidden",
+            },
+            headerStyle: { backgroundColor: "transparent" },
+            headerShadowVisible: false,
+          }
+        : {
+            headerTransparent: false,
+            headerStyle: {
+              backgroundColor: chrome.backgroundColor,
+            },
+            headerShadowVisible: chrome.elevation > 0,
+          }),
+    });
+  }, [
+    navigation,
+    conversationId,
+    contact.name,
+    contact.avatar,
+    chrome.backgroundColor,
+    chrome.elevation,
+  ]);
 
   const body = (
     <ErrorBoundary retryAccessibilityLabel="Retry screen">

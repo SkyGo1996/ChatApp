@@ -59,7 +59,11 @@ export function ConversationRow({ conversation }: Props) {
     <Link
       href={{
         pathname: "/(tabs)/chats/[id]",
-        params: { id: String(conversation.id) },
+        params: {
+          id: String(conversation.id),
+          name: conversation.name,
+          avatar: conversation.avatar,
+        },
       }}
       asChild>
       <Pressable
