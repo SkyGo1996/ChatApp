@@ -1,7 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { Link } from "expo-router";
-import { useEffect, useState } from "react";
-import { AccessibilityInfo, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,8 +8,9 @@ import Animated, {
 import { StyleSheet } from "react-native-unistyles";
 
 import { Avatar } from "@/components/Avatar";
+import { pressInScale, pressOutScale } from "@/components/pressScale";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { formatConversationTimestamp } from "@/utils/datetime";
-import { pressInScale, pressOutScale } from "@/utils/pressScale";
 
 import { useConversationPreview } from "@/features/conversations/hooks/useConversationPreview";
 import type { Conversation } from "@/features/conversations/types";
@@ -28,23 +28,8 @@ type Props = {
  */
 export function ConversationRow({ conversation }: Props) {
   const { preview } = useConversationPreview(conversation.id);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
-
-  useEffect(() => {
-    let cancelled = false;
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (!cancelled) setReduceMotion(enabled);
-    });
-    const sub = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotion
-    );
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, []);
 
   // Prefer locally patched fields (ticket 08) over enrichment.
   const previewText =

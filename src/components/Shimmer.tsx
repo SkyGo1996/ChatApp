@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { AccessibilityInfo, type ViewStyle } from "react-native";
+import { type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { motion } from "@/theme/tokens";
 
 type Props = {
@@ -28,25 +29,19 @@ export function Shimmer({
   style,
 }: Props) {
   const opacity = useSharedValue(0.4);
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
-    let cancelled = false;
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (cancelled) return;
-      if (reduce) {
-        opacity.value = 0.55;
-        return;
-      }
-      opacity.value = withRepeat(
-        withTiming(1, { duration: motion.shimmer.duration }),
-        -1,
-        true
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [opacity]);
+    if (reduceMotion) {
+      opacity.value = 0.55;
+      return;
+    }
+    opacity.value = withRepeat(
+      withTiming(1, { duration: motion.shimmer.duration }),
+      -1,
+      true
+    );
+  }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

@@ -13,7 +13,7 @@ export type Conversation = {
   lastMessageAt?: string;
 };
 
-/** Slim preview DTO from GET /posts?userId=&limit=1 enrichment. */
+/** Slim preview DTO from latest-post enrichment (`limit=1`, offset=total-1). */
 export type ConversationPreview = {
   text: string;
   createdAt: string;

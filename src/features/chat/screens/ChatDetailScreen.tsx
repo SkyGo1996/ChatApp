@@ -1,9 +1,9 @@
 import { Link } from "expo-router";
-import { useEffect, useState } from "react";
-import { AccessibilityInfo, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { motion } from "@/theme/tokens";
 
 type Props = {
@@ -11,22 +11,7 @@ type Props = {
 };
 
 export default function ChatDetailScreen({ conversationId }: Props) {
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (!cancelled) setReduceMotion(enabled);
-    });
-    const sub = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotion
-    );
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, []);
+  const reduceMotion = useReduceMotion();
 
   const content = (
     <>

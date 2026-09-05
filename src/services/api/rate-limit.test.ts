@@ -26,10 +26,15 @@ describe("handleRateLimit", () => {
   });
 
   test("x-ratelimit-remaining <10 warns", () => {
+    const warn = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
     handleRateLimit({ headers: { "x-ratelimit-remaining": "9" } });
     expect(toast.warning).toHaveBeenCalledWith(
       expect.stringContaining("9 remaining")
     );
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   test("x-ratelimit-remaining >=10 no toast", () => {

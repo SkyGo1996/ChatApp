@@ -88,8 +88,8 @@ describe("ConversationRow", () => {
     });
 
     expect(await screen.findByText("Enriched preview line")).toBeTruthy();
-    // Today → h:mm a
-    expect(screen.getByText(/^\d{1,2}:\d{2} (AM|PM)$/)).toBeTruthy();
+    // Today → hh:mm a
+    expect(screen.getByText(/^\d{2}:\d{2} (AM|PM)$/)).toBeTruthy();
   });
 
   test("prefers patched lastMessage over enrichment", async () => {

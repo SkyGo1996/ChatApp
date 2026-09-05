@@ -3,8 +3,8 @@ export const endpoints = {
     list: "/users",
   },
   chat: {
-    messages: (conversationId: string | number) =>
-      `/posts?userId=${conversationId}`,
+    /** Path only — pass `userId` (and pagination) via axios `params`. */
+    messages: (_conversationId: string | number) => "/posts",
     send: "/posts",
   },
   profile: {

@@ -10,12 +10,9 @@ export function useNodeHttpAdapterForMsw(): void {
 }
 
 /**
- * Absolute MSW path for the posts collection (no query string).
+ * Absolute MSW path for the posts collection.
  * Derived from `endpoints.chat.messages` so tests never hardcode `/posts`.
  */
 export function mswMessagesCollectionUrl(): string {
-  const withQuery = endpoints.chat.messages(0);
-  const q = withQuery.indexOf("?");
-  const path = q >= 0 ? withQuery.slice(0, q) : withQuery;
-  return `${API_BASE_URL}${path}`;
+  return `${API_BASE_URL}${endpoints.chat.messages(0)}`;
 }

@@ -5,10 +5,10 @@ import {
 } from "./datetime";
 
 describe("formatConversationTimestamp", () => {
-  test("formats today as h:mm a", () => {
+  test("formats today as hh:mm a", () => {
     const now = new Date();
     const result = formatConversationTimestamp(now);
-    expect(result).toMatch(/^\d{1,2}:\d{2} (AM|PM)$/);
+    expect(result).toMatch(/^\d{2}:\d{2} (AM|PM)$/);
   });
 
   test("formats yesterday as Yesterday", () => {
@@ -38,9 +38,9 @@ describe("formatConversationTimestamp", () => {
 });
 
 describe("formatMessageTimestamp", () => {
-  test("formats as h:mm a", () => {
+  test("formats as hh:mm a", () => {
     expect(formatMessageTimestamp(new Date(2024, 0, 15, 14, 30))).toBe(
-      "2:30 PM"
+      "02:30 PM"
     );
   });
 

@@ -4,7 +4,6 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
 
-import { endpoints } from "@/services/api/endpoints";
 import { mswMessagesCollectionUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
 import { createTestQueryClient } from "@/test-utils";
 
@@ -41,9 +40,7 @@ describe("useConversationPreview", () => {
         const url = new URL(request.url);
         expect(url.searchParams.get("limit")).toBe("1");
         expect(url.searchParams.get("userId")).toBe(String(contactId));
-        expect(endpoints.chat.messages(contactId)).toContain(
-          `userId=${contactId}`
-        );
+        expect(url.searchParams.get("offset")).toBe("0");
         return HttpResponse.json({
           total: 1,
           limit: 1,

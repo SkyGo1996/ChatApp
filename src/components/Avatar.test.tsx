@@ -18,4 +18,18 @@ describe("Avatar", () => {
     await render(<Avatar name="   " />);
     expect(screen.getByText("?")).toBeTruthy();
   });
+
+  test("resets initials when recyclingKey / name changes", async () => {
+    const { rerender } = await render(
+      <Avatar name="Jane Doe" recyclingKey="1" testID="avatar" />
+    );
+    expect(screen.getByText("JD")).toBeTruthy();
+
+    await rerender(
+      <Avatar name="Ada Lovelace" recyclingKey="2" testID="avatar" />
+    );
+    expect(screen.getByText("AL")).toBeTruthy();
+    expect(screen.queryByText("JD")).toBeNull();
+    expect(screen.getByLabelText("Ada Lovelace avatar")).toBeTruthy();
+  });
 });

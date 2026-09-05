@@ -18,12 +18,23 @@ type Props = {
 /**
  * Circular avatar via expo-image (`memory-disk` cache).
  * Shows shimmer while loading; falls back to initials on error / missing uri.
+ * Remounts on uri/recyclingKey change so FlashList reuse cannot stick failed/loading.
  */
-export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
+export function Avatar(props: Props) {
+  const { uri, recyclingKey } = props;
+  return (
+    <AvatarContent key={`${recyclingKey ?? ""}:${uri ?? ""}`} {...props} />
+  );
+}
+
+function AvatarContent({ name, uri, size = 48, recyclingKey, testID }: Props) {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(Boolean(uri));
   const showImage = Boolean(uri) && !failed;
   const initials = initialsFromName(name);
+  const fontSize = Math.max(12, Math.round(size * 0.35));
+  // Pair lineHeight with fontSize (~caption1 16/12 ratio).
+  const lineHeight = Math.round(fontSize * (16 / 12));
 
   return (
     <View
@@ -56,11 +67,7 @@ export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
             { width: size, height: size, borderRadius: size / 2 },
           ]}
           accessibilityLabel={`${name} avatar`}>
-          <Text
-            style={[
-              styles.initials,
-              { fontSize: Math.max(12, Math.round(size * 0.35)) },
-            ]}>
+          <Text style={[styles.initials, { fontSize, lineHeight }]}>
             {initials}
           </Text>
         </View>
