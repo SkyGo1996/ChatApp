@@ -1,77 +1,160 @@
-import { Link } from "expo-router";
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import { StyleSheet } from "react-native-unistyles";
+import { FlashList, type ListRenderItem } from "@shopify/flash-list";
+import { MessagesSquare } from "lucide-react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, RefreshControl, View } from "react-native";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorRetry } from "@/components/ErrorRetry";
+import { getRetryAfterMs, type ApiError } from "@/services/api/client";
 
-function ConversationsContent() {
-  const [shouldCrashScreen, setShouldCrashScreen] = useState(false);
-  if (shouldCrashScreen) {
-    throw new Error("Dev screen crash — testing per-screen ErrorBoundary");
+import {
+  ConversationRow,
+  ConversationShimmer,
+} from "@/features/conversations/components";
+import { useConversations } from "@/features/conversations/hooks/useConversations";
+import type { Conversation } from "@/features/conversations/types";
+
+function conversationsErrorMessage(error: ApiError | null): string {
+  if (!error) return "Something went wrong.";
+  if (error.status === undefined || error.status === null) {
+    return "You're offline / request timed out";
+  }
+  if (error.status === 429) {
+    return "Too many requests — try again";
+  }
+  return "Something went wrong.";
+}
+
+function useRetryDisabledUntil(error: ApiError | null): boolean {
+  const [trackedError, setTrackedError] = useState(error);
+  const [disabled, setDisabled] = useState(() => error?.status === 429);
+
+  if (error !== trackedError) {
+    setTrackedError(error);
+    setDisabled(error?.status === 429);
+  }
+
+  useEffect(() => {
+    if (error?.status !== 429) return;
+    const ms = getRetryAfterMs(error.retryAfter, error.headers);
+    const wait = Math.max(1000, ms ?? 1000);
+    const id = setTimeout(() => {
+      setDisabled(false);
+    }, wait);
+    return () => clearTimeout(id);
+  }, [error]);
+
+  return disabled;
+}
+
+const renderConversationItem: ListRenderItem<Conversation> = ({ item }) => (
+  <ConversationRow conversation={item} />
+);
+
+function keyExtractor(item: Conversation): string {
+  return String(item.id);
+}
+
+function ConversationsList() {
+  const { theme } = useUnistyles();
+  const {
+    items,
+    isPending,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useConversations();
+
+  const retryDisabled = useRetryDisabledUntil(error);
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const onRefresh = useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
+  const listEmpty = useCallback(
+    () => (
+      <EmptyState
+        title="No conversations"
+        secondary="When you start chatting, conversations will show up here."
+        illustration={
+          <MessagesSquare
+            size={48}
+            color={theme.colors.textSecondary}
+            strokeWidth={1.5}
+          />
+        }
+      />
+    ),
+    [theme.colors.textSecondary]
+  );
+
+  const listFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator color={theme.colors.primary} />
+      </View>
+    );
+  }, [isFetchingNextPage, theme.colors.primary]);
+
+  if (isPending) {
+    return <ConversationShimmer />;
+  }
+
+  if (isError && items.length === 0) {
+    return (
+      <ErrorRetry
+        message={conversationsErrorMessage(error)}
+        onRetry={() => {
+          void refetch();
+        }}
+        retryDisabled={retryDisabled}
+        retryAccessibilityLabel="Retry conversations"
+      />
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Chats</Text>
-      <Text style={styles.subtitle}>Conversations placeholder</Text>
-      <Link
-        href={{ pathname: "/(tabs)/chats/[id]", params: { id: "1" } }}
-        asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open chat 1"
-          style={styles.linkButton}>
-          <Text style={styles.linkText}>Open Chat 1 →</Text>
-        </Pressable>
-      </Link>
-      <Link
-        href={{ pathname: "/(tabs)/chats/[id]", params: { id: "2" } }}
-        asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open chat 2"
-          style={styles.linkButton}>
-          <Text style={styles.linkText}>Open Chat 2 →</Text>
-        </Pressable>
-      </Link>
-      {__DEV__ ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Crash screen (dev)"
-          onPress={() => setShouldCrashScreen(true)}
-          style={styles.devCrashButton}>
-          <Text style={styles.devCrashText}>Crash screen (dev)</Text>
-        </Pressable>
-      ) : null}
-    </View>
+    <FlashList
+      data={items}
+      renderItem={renderConversationItem}
+      keyExtractor={keyExtractor}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
+      ListEmptyComponent={listEmpty}
+      ListFooterComponent={listFooter}
+      contentContainerStyle={styles.listContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching && !isFetchingNextPage}
+          onRefresh={onRefresh}
+          tintColor={theme.colors.primary}
+        />
+      }
+    />
   );
 }
 
 export default function ConversationsScreen() {
-  const [shouldCrashRoot, setShouldCrashRoot] = useState(false);
-  if (shouldCrashRoot) {
-    throw new Error("Dev root crash — testing Root ErrorBoundary");
-  }
-
   return (
     <View style={styles.outer}>
       <View style={styles.inner}>
         <ErrorBoundary retryAccessibilityLabel="Retry screen">
-          <ConversationsContent />
+          <ConversationsList />
         </ErrorBoundary>
       </View>
-      {__DEV__ ? (
-        <View style={styles.rootCrashWrap}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Crash app (dev)"
-            onPress={() => setShouldCrashRoot(true)}
-            style={styles.devCrashButton}>
-            <Text style={styles.devCrashText}>Crash app (dev)</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -84,47 +167,12 @@ const styles = StyleSheet.create((theme) => ({
   inner: {
     flex: 1,
   },
-  rootCrashWrap: {
-    alignItems: "center",
-    paddingBottom: theme.space(8),
+  listContent: {
+    // Clear floating tab bar (~64) + space(4)
+    paddingBottom: 64 + theme.space(4),
   },
-  container: {
+  footer: {
     alignItems: "center",
-    backgroundColor: theme.colors.bg,
-    flex: 1,
-    justifyContent: "center",
-    padding: theme.space(4),
-  },
-  linkButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    marginTop: theme.space(3),
-    paddingHorizontal: theme.space(4),
     paddingVertical: theme.space(3),
-  },
-  linkText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  subtitle: {
-    color: theme.colors.textSecondary,
-    marginTop: theme.space(1),
-  },
-  title: {
-    color: theme.colors.text,
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  devCrashButton: {
-    borderColor: theme.colors.destructive,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    marginTop: theme.space(6),
-    paddingHorizontal: theme.space(4),
-    paddingVertical: theme.space(2.5),
-  },
-  devCrashText: {
-    color: theme.colors.destructive,
-    fontWeight: "600",
   },
 }));
