@@ -37,6 +37,8 @@ export default function TabsLayout() {
         default: { color: inactiveColor },
         selected: { color: tintColor },
       }}
+      // iOS 18 and earlier: keep tab bar opaque at scroll edge (no-op on iOS 26+)
+      disableTransparentOnScrollEdge
       // iOS 26+: minimize when scrolling (no-op on older iOS / Android)
       minimizeBehavior="onScrollDown"
       // Pin TabsHost colorScheme to Unistyles (not OS inherit) so Liquid Glass
