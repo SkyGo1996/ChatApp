@@ -6,6 +6,7 @@ import {
   chromeFab,
   chromeHeader,
   chromeSheet,
+  glassColorScheme,
 } from "./recipes";
 import {
   REQUIRED_RADIUS_KEYS,
@@ -112,6 +113,11 @@ describe("chrome recipes — platform mapping", () => {
     );
     expect(chromeSheet(lightTheme).useGlass).toBe(true);
     expect(chromeFab(lightTheme).useGlass).toBe(true);
+  });
+
+  test("glassColorScheme follows Unistyles theme not system auto", () => {
+    expect(glassColorScheme(lightTheme)).toBe("light");
+    expect(glassColorScheme(darkTheme)).toBe("dark");
   });
 
   test("Android recipes never emit glassBorder or useGlass", () => {

@@ -24,7 +24,9 @@ export default function SettingsScreen() {
   const version = getAppVersion();
 
   return (
-    <View style={styles.outer}>
+    // collapsable={false}: iOS NativeTabs treats first nested ScrollView specially
+    // for insets / scroll-edge; wrappers must not collapse away.
+    <View style={styles.outer} collapsable={false}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -68,6 +70,7 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   scroll: {
+    backgroundColor: theme.colors.bg,
     flex: 1,
   },
   content: {

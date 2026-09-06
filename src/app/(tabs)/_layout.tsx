@@ -23,6 +23,10 @@ export default function TabsLayout() {
         })
       : theme.colors.textSecondary;
 
+  // Paint the native tab scene with Unistyles bg — iOS 26 Liquid Glass samples
+  // content behind the bar; without this, DefaultTheme white flashes on switch.
+  const tabContentStyle = { backgroundColor: theme.colors.bg };
+
   return (
     <NativeTabs
       tintColor={tintColor}
@@ -33,14 +37,14 @@ export default function TabsLayout() {
       }}
       // iOS 26+: minimize when scrolling (no-op on older iOS / Android)
       minimizeBehavior="onScrollDown">
-      <NativeTabs.Trigger name="chats">
+      <NativeTabs.Trigger name="chats" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: "message", selected: "message.fill" }}
           md="chat"
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="settings">
+      <NativeTabs.Trigger name="settings" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: "gearshape", selected: "gearshape.fill" }}

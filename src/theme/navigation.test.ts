@@ -1,7 +1,27 @@
 import { Platform } from "react-native";
 
-import { themedStackOptions } from "./navigation";
+import { navigationTheme, themedStackOptions } from "./navigation";
 import { darkTheme, lightTheme } from "./themes";
+
+describe("navigationTheme", () => {
+  test("light maps Unistyles bg/surface into Navigation theme", () => {
+    const nav = navigationTheme(lightTheme, false);
+    expect(nav.dark).toBe(false);
+    expect(nav.colors.background).toBe(lightTheme.colors.bg);
+    expect(nav.colors.card).toBe(lightTheme.colors.surface);
+    expect(nav.colors.primary).toBe(lightTheme.colors.primary);
+    expect(nav.colors.text).toBe(lightTheme.colors.text);
+    expect(nav.colors.border).toBe(lightTheme.colors.border);
+    expect(nav.colors.notification).toBe(lightTheme.colors.destructive);
+  });
+
+  test("dark maps Unistyles bg/surface into Navigation theme", () => {
+    const nav = navigationTheme(darkTheme, true);
+    expect(nav.dark).toBe(true);
+    expect(nav.colors.background).toBe(darkTheme.colors.bg);
+    expect(nav.colors.card).toBe(darkTheme.colors.surface);
+  });
+});
 
 describe("themedStackOptions", () => {
   const originalOS = Platform.OS;

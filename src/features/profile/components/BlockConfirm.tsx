@@ -12,7 +12,7 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { useBlock } from "@/store/useBlock";
-import { chromeSheet } from "@/theme/recipes";
+import { chromeSheet, glassColorScheme } from "@/theme/recipes";
 
 import {
   AlertDialog,
@@ -64,19 +64,20 @@ function ProfileWash({
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
-  const iosFill = {
-    backgroundColor: chrome.backgroundColor,
+  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
+  const iosBorder = {
     borderColor: chrome.borderColor,
     borderWidth: chrome.borderWidth,
-    overflow: "hidden" as const,
   };
+  const hostFill = { backgroundColor: chrome.backgroundColor };
 
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <GlassView
-          style={[style, iosFill]}
+          style={[style, iosBorder]}
           tintColor={theme.colors.glassTint}
+          colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
           {children}
         </GlassView>
@@ -86,11 +87,11 @@ function ProfileWash({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <BlurView
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
-          style={[style, iosFill]}>
+          style={[style, iosBorder, hostFill, { overflow: "hidden" as const }]}>
           {children}
         </BlurView>
       </View>

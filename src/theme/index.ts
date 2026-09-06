@@ -1,5 +1,7 @@
 export {
+  navigationTheme,
   themedStackOptions,
+  useNavigationTheme,
   useThemedStackOptions,
   type ThemedStackOptions,
 } from "./navigation";
@@ -9,6 +11,7 @@ export {
   chromeFab,
   chromeHeader,
   chromeSheet,
+  glassColorScheme,
 } from "./recipes";
 export type { ChromeRecipe } from "./recipes";
 export { darkTheme, lightTheme } from "./themes";

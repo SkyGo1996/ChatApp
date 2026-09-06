@@ -500,7 +500,8 @@ export default function ChatDetailScreen({
     <Animated.View
       style={styles.outer}
       entering={FadeInUp.duration(motion.fadeUp.duration).withInitialValues({
-        opacity: motion.fadeUp.from.opacity,
+        // Keep opacity at 1 — GlassView under opacity 0 never installs (expo-glass-effect).
+        opacity: 1,
         transform: [{ translateY: motion.fadeUp.from.translateY }],
       })}>
       {body}

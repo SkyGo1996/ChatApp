@@ -1,10 +1,11 @@
+import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
 import type { NativeStackNavigationOptions } from "expo-router/build/react-navigation/native-stack/types";
 import { useMemo } from "react";
 import { Platform } from "react-native";
 import { useUnistyles } from "react-native-unistyles";
 
 import { chromeHeader } from "./recipes";
-import type { AppTheme } from "./themes";
+import { darkTheme, type AppTheme } from "./themes";
 
 /**
  * Native Stack header options that follow Unistyles theme.
@@ -27,6 +28,37 @@ export type ThemedStackOptions = Pick<
   | "headerBackButtonDisplayMode"
   | "contentStyle"
 >;
+
+/**
+ * React Navigation theme mapped from Unistyles tokens.
+ * Required so NativeTabs / Liquid Glass scene backgrounds follow app SOT
+ * (`theme.colors.bg`) instead of DefaultTheme white (`rgb(242,242,247)`),
+ * which flashes on iOS 26 tab switches.
+ */
+export function navigationTheme(theme: AppTheme, isDark: boolean): Theme {
+  const base = isDark ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    dark: isDark,
+    colors: {
+      ...base.colors,
+      primary: theme.colors.primary,
+      background: theme.colors.bg,
+      card: theme.colors.surface,
+      text: theme.colors.text,
+      border: theme.colors.border,
+      notification: theme.colors.destructive,
+    },
+  };
+}
+
+export function useNavigationTheme(): Theme {
+  const { theme, rt } = useUnistyles();
+  const themeName = (rt as { themeName?: string }).themeName;
+  const isDark =
+    themeName === "dark" || theme.colors.bg === darkTheme.colors.bg;
+  return useMemo(() => navigationTheme(theme, isDark), [theme, isDark]);
+}
 
 export function themedStackOptions(
   theme: AppTheme,

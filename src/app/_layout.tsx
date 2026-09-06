@@ -2,7 +2,12 @@ import "react-native-reanimated";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, useRootNavigationState } from "expo-router";
+import {
+  SplashScreen,
+  Stack,
+  ThemeProvider,
+  useRootNavigationState,
+} from "expo-router";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, View } from "react-native";
@@ -18,7 +23,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ensurePersistor, store } from "@/store";
 import { getPersistedThemeModeSync, initBlockedStorage } from "@/store/persist";
-import { themedStackOptions } from "@/theme/navigation";
+import { themedStackOptions, useNavigationTheme } from "@/theme/navigation";
 import { applyThemeMode } from "@/theme/unistyles";
 
 void SplashScreen.preventAutoHideAsync();
@@ -87,40 +92,43 @@ function InnerProviders({
 
 function ThemedRootStack() {
   const { theme } = useUnistyles();
+  const navTheme = useNavigationTheme();
   const opaque = useMemo(() => themedStackOptions(theme), [theme]);
   const transparentChat = useMemo(
     () => themedStackOptions(theme, { transparent: Platform.OS === "ios" }),
     [theme]
   );
   return (
-    <Stack screenOptions={opaque}>
-      <Stack.Screen
-        name="index"
-        options={{ headerShown: false, animation: "none" }}
-      />
-      <Stack.Screen
-        name="(tabs)"
-        options={{ headerShown: false, animation: "none" }}
-      />
-      <Stack.Screen
-        name="chats/[id]"
-        options={{
-          title: "Chat",
-          ...transparentChat,
-        }}
-      />
-      <Stack.Screen
-        name="chats/[id]/profile"
-        options={{
-          title: "Profile",
-          ...opaque,
-        }}
-      />
-      <Stack.Screen
-        name="+not-found"
-        options={{ title: "Not Found", ...opaque }}
-      />
-    </Stack>
+    <ThemeProvider value={navTheme}>
+      <Stack screenOptions={opaque}>
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false, animation: "none" }}
+        />
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false, animation: "none" }}
+        />
+        <Stack.Screen
+          name="chats/[id]"
+          options={{
+            title: "Chat",
+            ...transparentChat,
+          }}
+        />
+        <Stack.Screen
+          name="chats/[id]/profile"
+          options={{
+            title: "Profile",
+            ...opaque,
+          }}
+        />
+        <Stack.Screen
+          name="+not-found"
+          options={{ title: "Not Found", ...opaque }}
+        />
+      </Stack>
+    </ThemeProvider>
   );
 }
 

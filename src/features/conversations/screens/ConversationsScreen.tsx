@@ -182,6 +182,7 @@ function ConversationsList() {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
+        style={styles.list}
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: listBottomPad },
@@ -201,8 +202,9 @@ function ConversationsList() {
 
 export default function ConversationsScreen() {
   return (
-    <View style={styles.outer}>
-      <View style={styles.inner}>
+    // collapsable={false}: keep outer surface for NativeTabs Liquid Glass sampling
+    <View style={styles.outer} collapsable={false}>
+      <View style={styles.inner} collapsable={false}>
         <ErrorBoundary retryAccessibilityLabel="Retry screen">
           <ConversationsList />
         </ErrorBoundary>
@@ -220,6 +222,11 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   listWrap: {
+    backgroundColor: theme.colors.bg,
+    flex: 1,
+  },
+  list: {
+    backgroundColor: theme.colors.bg,
     flex: 1,
   },
   listContent: {

@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 
-import type { AppTheme } from "./themes";
+import { darkTheme, type AppTheme } from "./themes";
 
 /**
  * Platform chrome surface recipe — identical layout keys for iOS Liquid Glass
@@ -20,6 +20,14 @@ export type ChromeRecipe = {
   /** iOS blur radius hint; undefined on Android. */
   blurRadius?: number;
 };
+
+/**
+ * Explicit GlassView colorScheme from Unistyles theme (not system `auto`).
+ * Avoids dark→light flash when OS appearance ≠ in-app theme.
+ */
+export function glassColorScheme(theme: AppTheme): "light" | "dark" {
+  return theme.colors.bg === darkTheme.colors.bg ? "dark" : "light";
+}
 
 function isIOS(): boolean {
   return Platform.OS === "ios";

@@ -10,6 +10,7 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
+import { glassColorScheme } from "@/theme/recipes";
 
 import {
   THEME_MODE_TO_INDEX,
@@ -71,26 +72,26 @@ export function ThemeSegmentedControl() {
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
-  const iosFill = {
-    backgroundColor: theme.colors.glassBg,
+  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
+  const iosBorder = {
     borderColor: theme.colors.glassBorder,
     borderWidth: 0.5,
     borderRadius: theme.radius.full,
-    overflow: "hidden" as const,
+  };
+  const hostFill = {
+    backgroundColor: theme.colors.glassBg,
+    borderRadius: theme.radius.full,
   };
 
   if (canGlass) {
     return (
       <View
-        style={[
-          styles.glassHost,
-          theme.shadow,
-          { borderRadius: theme.radius.full },
-        ]}
+        style={[styles.glassHost, theme.shadow, hostFill]}
         testID="theme-segment-ios-glass-host">
         <GlassView
-          style={[styles.pillIOS, iosFill]}
+          style={[styles.pillIOS, iosBorder]}
           tintColor={theme.colors.glassTint}
+          colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
           <SegmentedControl
             values={[...THEME_VALUES]}
@@ -108,16 +109,17 @@ export function ThemeSegmentedControl() {
   if (!reduceTransparency) {
     return (
       <View
-        style={[
-          styles.glassHost,
-          theme.shadow,
-          { borderRadius: theme.radius.full },
-        ]}
+        style={[styles.glassHost, theme.shadow, hostFill]}
         testID="theme-segment-ios-blur-host">
         <BlurView
           intensity={theme.blur.full}
           tint="default"
-          style={[styles.pillIOS, iosFill]}>
+          style={[
+            styles.pillIOS,
+            iosBorder,
+            hostFill,
+            { overflow: "hidden" as const },
+          ]}>
           <SegmentedControl
             values={[...THEME_VALUES]}
             selectedIndex={selectedIndex}

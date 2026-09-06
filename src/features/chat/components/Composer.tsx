@@ -28,7 +28,7 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { pressInScale, pressOutScale } from "@/components/pressScale";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
-import { chromeComposer } from "@/theme/recipes";
+import { chromeComposer, glassColorScheme } from "@/theme/recipes";
 import { motionExpressive } from "@/theme/tokens";
 import { MESSAGE_MAX_LENGTH, sanitizeMessageInput } from "@/utils/sanitize";
 
@@ -117,20 +117,23 @@ function ComposerChrome({
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
-  const iosFill = {
-    backgroundColor: chrome.backgroundColor,
+  // Host fill covers the native empty-UIVisualEffect dark frame before glass
+  // installs. Do not put opaque backgroundColor on GlassView itself — that
+  // hides the material. BlurView keeps fill+clip on the effect view.
+  const iosBorder = {
     borderColor: chrome.borderColor,
     borderWidth: chrome.borderWidth,
-    overflow: "hidden" as const,
   };
+  const hostFill = { backgroundColor: chrome.backgroundColor };
 
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <GlassView
           testID="composer-chrome"
-          style={[style, iosFill]}
+          style={[style, iosBorder]}
           tintColor={theme.colors.glassTint}
+          colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
           {children}
         </GlassView>
@@ -140,12 +143,12 @@ function ComposerChrome({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <BlurView
           testID="composer-chrome"
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
-          style={[style, iosFill]}>
+          style={[style, iosBorder, hostFill, { overflow: "hidden" as const }]}>
           {children}
         </BlurView>
       </View>

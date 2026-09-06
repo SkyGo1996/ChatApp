@@ -28,7 +28,7 @@ import { BlockConfirm } from "@/features/profile/components/BlockConfirm";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
-import { chromeSheet } from "@/theme/recipes";
+import { chromeSheet, glassColorScheme } from "@/theme/recipes";
 import { motion } from "@/theme/tokens";
 
 import { useProfile } from "@/features/profile/hooks/useProfile";
@@ -106,19 +106,20 @@ function ProfileWash({
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
-  const iosFill = {
-    backgroundColor: chrome.backgroundColor,
+  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
+  const iosBorder = {
     borderColor: chrome.borderColor,
     borderWidth: chrome.borderWidth,
-    overflow: "hidden" as const,
   };
+  const hostFill = { backgroundColor: chrome.backgroundColor };
 
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <GlassView
-          style={[style, iosFill]}
+          style={[style, iosBorder]}
           tintColor={theme.colors.glassTint}
+          colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
           {children}
         </GlassView>
@@ -128,11 +129,11 @@ function ProfileWash({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow]}>
+      <View style={[styles.glassHost, theme.shadow, hostFill]}>
         <BlurView
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
-          style={[style, iosFill]}>
+          style={[style, iosBorder, hostFill, { overflow: "hidden" as const }]}>
           {children}
         </BlurView>
       </View>
@@ -314,7 +315,8 @@ export default function ProfileScreen({ contactId }: Props) {
     <Animated.View
       style={styles.outer}
       entering={FadeInUp.duration(motion.fadeUp.duration).withInitialValues({
-        opacity: motion.fadeUp.from.opacity,
+        // Keep opacity at 1 — GlassView under opacity 0 never installs (expo-glass-effect).
+        opacity: 1,
         transform: [{ translateY: motion.fadeUp.from.translateY }],
       })}>
       {content}
