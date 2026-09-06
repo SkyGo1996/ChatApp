@@ -45,6 +45,21 @@ export function appendOutgoing(
 }
 
 /**
+ * Find one Message by id across all cached pages.
+ */
+export function findOutgoing(
+  data: MessagesInfiniteData | undefined,
+  localId: string | number
+): Message | undefined {
+  const idKey = String(localId);
+  for (const page of data?.pages ?? []) {
+    const found = page.items.find((message) => String(message.id) === idKey);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
  * Patch one outgoing Message by local id across all cached pages.
  */
 export function updateOutgoing(
@@ -60,6 +75,27 @@ export function updateOutgoing(
       ...page,
       items: page.items.map((message) =>
         String(message.id) === idKey ? { ...message, ...patch } : message
+      ),
+    })),
+  };
+}
+
+/**
+ * Replace one outgoing Message by local id with the server Message (201).
+ */
+export function replaceOutgoing(
+  data: MessagesInfiniteData | undefined,
+  localId: string | number,
+  next: Message
+): MessagesInfiniteData | undefined {
+  if (!data) return data;
+  const idKey = String(localId);
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      items: page.items.map((message) =>
+        String(message.id) === idKey ? next : message
       ),
     })),
   };
@@ -91,8 +127,8 @@ export function patchConversationPreview(
 }
 
 /**
- * Re-attach local `me` Messages after a tail GET (mock POST is not persisted).
- * Appends outgoing rows that are missing from the fresh server page.
+ * Re-attach outgoing `me` Messages after a tail GET (mock POST is not persisted).
+ * Covers in-flight `local-*` rows and server-shaped rows (e.g. id 101) omitted by GET.
  */
 export function preserveOutgoingOnTail(
   previous: MessagesInfiniteData | undefined,

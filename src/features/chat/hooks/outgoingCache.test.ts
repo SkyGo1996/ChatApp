@@ -9,8 +9,10 @@ import type { ConversationsInfiniteData } from "@/features/conversations/hooks/u
 
 import {
   appendOutgoing,
+  findOutgoing,
   patchConversationPreview,
   preserveOutgoingOnTail,
+  replaceOutgoing,
   updateOutgoing,
 } from "./outgoingCache";
 
@@ -23,6 +25,18 @@ const meSending = (id: string, text = "Hello"): Message => ({
   sender: "me",
   createdAt: "2026-09-06T01:00:00.000Z",
   status: "sending",
+});
+
+const meSent = (
+  id: number | string,
+  text = "Hello",
+  createdAt = "2026-09-06T01:01:00.000Z"
+): Message => ({
+  id,
+  text,
+  sender: "me",
+  createdAt,
+  status: "sent",
 });
 
 const themSent = (id: number, text = "Hi"): Message => ({
@@ -94,6 +108,26 @@ describe("appendOutgoing", () => {
   });
 });
 
+describe("findOutgoing", () => {
+  test("returns the matching Message by id", () => {
+    const data = makeMessagesData([
+      themSent(1),
+      meSending("local-1", "ping"),
+      meSending("local-2", "pong"),
+    ]);
+    expect(findOutgoing(data, "local-1")).toMatchObject({
+      id: "local-1",
+      text: "ping",
+    });
+  });
+
+  test("returns undefined when id is missing or cache is empty", () => {
+    const data = makeMessagesData([meSending("local-1")]);
+    expect(findOutgoing(data, "local-missing")).toBeUndefined();
+    expect(findOutgoing(undefined, "local-1")).toBeUndefined();
+  });
+});
+
 describe("updateOutgoing", () => {
   test("patches the matching local Message by id", () => {
     const data = makeMessagesData([
@@ -121,6 +155,29 @@ describe("updateOutgoing", () => {
     expect(updateOutgoing(undefined, "local-1", { status: "failed" })).toBe(
       undefined
     );
+  });
+});
+
+describe("replaceOutgoing", () => {
+  test("swaps the matching row for the server Message", () => {
+    const data = makeMessagesData([
+      themSent(1),
+      meSending("local-1", "ping"),
+      meSending("local-2", "pong"),
+    ]);
+    const server = meSent(101, "ping", "2026-09-06T01:01:00.000Z");
+    const next = replaceOutgoing(data, "local-1", server);
+    expect(next?.pages[0]?.items[1]).toEqual(server);
+    expect(next?.pages[0]?.items[2]).toMatchObject({
+      id: "local-2",
+      status: "sending",
+    });
+  });
+
+  test("returns undefined when cache is empty", () => {
+    expect(
+      replaceOutgoing(undefined, "local-1", meSent(101, "x"))
+    ).toBeUndefined();
   });
 });
 
@@ -214,5 +271,41 @@ describe("preserveOutgoingOnTail", () => {
       limit: MESSAGES_PAGE_SIZE,
     };
     expect(preserveOutgoingOnTail(previous, nextTail)).toBe(nextTail);
+  });
+
+  test("re-appends server-shaped me Message id 101 when GET omits it", () => {
+    const outgoing = meSent(101, "Keep me");
+    const previous = makeMessagesData([themSent(1, "Server"), outgoing]);
+    const nextTail = {
+      items: [themSent(1, "Server"), themSent(2, "Also server")],
+      nextCursor: null,
+      previousCursor: null,
+      total: 2,
+      offset: 0,
+      limit: MESSAGES_PAGE_SIZE,
+    };
+
+    const merged = preserveOutgoingOnTail(previous, nextTail);
+    expect(merged.items.map((m) => m.id)).toEqual([1, 2, 101]);
+    expect(merged.items[2]).toMatchObject({
+      id: 101,
+      sender: "me",
+      status: "sent",
+      text: "Keep me",
+    });
+  });
+
+  test("does not duplicate server id 101 already present on the fresh tail", () => {
+    const outgoing = meSent(101, "Already there");
+    const previous = makeMessagesData([outgoing]);
+    const nextTail = {
+      items: [outgoing],
+      nextCursor: null,
+      previousCursor: null,
+      total: 1,
+      offset: 0,
+      limit: MESSAGES_PAGE_SIZE,
+    };
+    expect(preserveOutgoingOnTail(previous, nextTail).items).toHaveLength(1);
   });
 });

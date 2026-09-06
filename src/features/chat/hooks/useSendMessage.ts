@@ -14,25 +14,15 @@ import type { ConversationsInfiniteData } from "@/features/conversations/hooks/u
 
 import {
   appendOutgoing,
+  findOutgoing,
   patchConversationPreview,
+  replaceOutgoing,
   updateOutgoing,
 } from "./outgoingCache";
 import type { MessagesInfiniteData } from "./useMessages";
 
 function announce(status: "sending" | "sent" | "failed"): void {
   void AccessibilityInfo.announceForAccessibility(status);
-}
-
-function findOutgoing(
-  data: MessagesInfiniteData | undefined,
-  localId: string | number
-): Message | undefined {
-  const idKey = String(localId);
-  for (const page of data?.pages ?? []) {
-    const found = page.items.find((message) => String(message.id) === idKey);
-    if (found) return found;
-  }
-  return undefined;
 }
 
 /**
@@ -51,13 +41,9 @@ export function useSendMessage(conversationId: string | number) {
   });
 
   const applySuccess = useCallback(
-    (localId: string, sent: Message) => {
+    (localId: string, sent: Message, haptic: boolean) => {
       queryClient.setQueryData<MessagesInfiniteData>(messagesKey, (old) =>
-        updateOutgoing(old, localId, {
-          status: "sent",
-          text: sent.text,
-          createdAt: sent.createdAt,
-        })
+        replaceOutgoing(old, localId, sent)
       );
       queryClient.setQueryData<ConversationsInfiniteData>(
         conversationsKey,
@@ -69,7 +55,9 @@ export function useSendMessage(conversationId: string | number) {
             sent.createdAt
           )
       );
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (haptic) {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       announce("sent");
     },
     [conversationId, conversationsKey, messagesKey, queryClient]
@@ -83,6 +71,19 @@ export function useSendMessage(conversationId: string | number) {
       announce("failed");
     },
     [messagesKey, queryClient]
+  );
+
+  const commitOutgoing = useCallback(
+    async (localId: string, text: string, haptic: boolean): Promise<void> => {
+      announce("sending");
+      try {
+        const sent = await mutation.mutateAsync({ text });
+        applySuccess(localId, sent, haptic);
+      } catch {
+        applyFailure(localId);
+      }
+    },
+    [applyFailure, applySuccess, mutation]
   );
 
   const send = useCallback(
@@ -101,16 +102,10 @@ export function useSendMessage(conversationId: string | number) {
       queryClient.setQueryData<MessagesInfiniteData>(messagesKey, (old) =>
         appendOutgoing(old, optimistic)
       );
-      announce("sending");
 
-      try {
-        const sent = await mutation.mutateAsync({ text });
-        applySuccess(localId, sent);
-      } catch {
-        applyFailure(localId);
-      }
+      await commitOutgoing(localId, text, true);
     },
-    [applyFailure, applySuccess, messagesKey, mutation, queryClient]
+    [commitOutgoing, messagesKey, queryClient]
   );
 
   const retry = useCallback(
@@ -122,16 +117,10 @@ export function useSendMessage(conversationId: string | number) {
       queryClient.setQueryData<MessagesInfiniteData>(messagesKey, (old) =>
         updateOutgoing(old, localId, { status: "sending" })
       );
-      announce("sending");
 
-      try {
-        const sent = await mutation.mutateAsync({ text: existing.text });
-        applySuccess(localId, sent);
-      } catch {
-        applyFailure(localId);
-      }
+      await commitOutgoing(localId, existing.text, false);
     },
-    [applyFailure, applySuccess, messagesKey, mutation, queryClient]
+    [commitOutgoing, messagesKey, queryClient]
   );
 
   return {

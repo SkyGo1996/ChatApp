@@ -38,6 +38,9 @@ function dayKey(value: string): string | null {
 export function buildChatListItems(messages: Message[]): ChatListItem[] {
   const items: ChatListItem[] = [];
   let lastDay: string | null = null;
+  // Mock POST always returns id 101 — occurrence keeps FlashList keys unique
+  // without using array index (older pagination prepends would shift indices).
+  const idOccurrence = new Map<string, number>();
 
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i]!;
@@ -72,9 +75,13 @@ export function buildChatListItems(messages: Message[]): ChatListItem[] {
             ? BETWEEN_GROUP
             : WITHIN_GROUP;
 
+    const idKey = String(message.id);
+    const occurrence = idOccurrence.get(idKey) ?? 0;
+    idOccurrence.set(idKey, occurrence + 1);
+
     items.push({
       type: "message",
-      key: `msg-${String(message.id)}`,
+      key: `msg-${idKey}-${occurrence}`,
       message,
       marginTop,
     });

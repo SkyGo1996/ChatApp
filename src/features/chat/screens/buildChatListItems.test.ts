@@ -69,4 +69,21 @@ describe("buildChatListItems", () => {
     buildChatListItems(input);
     expect(input.map((m) => m.id)).toEqual(before);
   });
+
+  test("gives distinct keys when mock id 101 appears twice", () => {
+    const items = buildChatListItems([
+      msg(101, {
+        sender: "me",
+        text: "First",
+        createdAt: "2024-01-15T10:00:00Z",
+      }),
+      msg(101, {
+        sender: "me",
+        text: "Second",
+        createdAt: "2024-01-15T10:01:00Z",
+      }),
+    ]);
+    const messages = items.filter((i) => i.type === "message");
+    expect(messages.map((m) => m.key)).toEqual(["msg-101-0", "msg-101-1"]);
+  });
 });

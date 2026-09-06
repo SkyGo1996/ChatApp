@@ -16,7 +16,10 @@ import { MESSAGES_PAGE_SIZE } from "@/features/chat/api/fetchMessagesPage";
 import { makePost } from "@/features/chat/test-fixtures";
 import type { ConversationsInfiniteData } from "@/features/conversations/hooks/useConversations";
 
-import type { MessagesInfiniteData } from "./useMessages";
+import {
+  messagesInfiniteOptions,
+  type MessagesInfiniteData,
+} from "./useMessages";
 import { useSendMessage } from "./useSendMessage";
 
 const contactId = 5;
@@ -163,7 +166,7 @@ describe("useSendMessage", () => {
     const last = lastMessage(qc);
     expect(last?.status).toBe("sent");
     expect(last?.text).toBe("hello world");
-    expect(String(last?.id)).toMatch(/^local-/);
+    expect(last?.id).toBe(101);
     expect(last?.createdAt).toBe("2026-09-04T11:53:31.123Z");
 
     const conversations = qc.getQueryData<ConversationsInfiniteData>(
@@ -181,6 +184,19 @@ describe("useSendMessage", () => {
     expect(Haptics.impactAsync).toHaveBeenCalledWith(
       Haptics.ImpactFeedbackStyle.Light
     );
+
+    // Mock GET omits 101 — preserveOutgoingOnTail must keep the server row.
+    await act(async () => {
+      await qc.fetchInfiniteQuery(messagesInfiniteOptions(contactId));
+    });
+    const afterRefetch = qc.getQueryData<MessagesInfiniteData>(
+      queryKeys.messages(contactId)
+    );
+    expect(
+      afterRefetch?.pages
+        .flatMap((page) => page.items)
+        .some((message) => message.id === 101 && message.sender === "me")
+    ).toBe(true);
 
     void unmount();
     qc.getMutationCache().clear();
@@ -280,9 +296,11 @@ describe("useSendMessage", () => {
     const last = lastMessage(qc);
     expect(last?.status).toBe("sent");
     expect(last?.text).toBe("retry me");
-    expect(String(last?.id)).toBe(failedId);
+    expect(last?.id).toBe(101);
+    expect(String(last?.id)).not.toBe(failedId);
 
     expect(postCount).toBe(2);
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
     expect(
       qc.getQueryData<ConversationsInfiniteData>(queryKeys.conversations())
         ?.pages[0]?.items[0]
