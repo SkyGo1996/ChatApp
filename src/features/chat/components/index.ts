@@ -1,4 +1,5 @@
 export { ChatHeaderTitle } from "./ChatHeaderTitle";
+export { Composer } from "./Composer";
 export { DateSeparator } from "./DateSeparator";
 export { MessageBubble } from "./MessageBubble";
 export { MessageShimmer } from "./MessageShimmer";
