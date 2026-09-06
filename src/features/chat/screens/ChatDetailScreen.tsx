@@ -26,7 +26,7 @@ import {
   KeyboardStickyView,
   type KeyboardChatScrollViewProps,
 } from "react-native-keyboard-controller";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
@@ -282,19 +282,10 @@ function MessagesList({
     isFetchingPreviousPage,
   ]);
 
-  // Keep optimistic / local `me` rows visible while history is still loading
-  // or when GET failed after a local append.
-  if (isPending && items.length === 0) {
-    return (
-      <View
-        style={[
-          styles.listWrap,
-          { paddingBottom: composerClearance, paddingTop: headerClearance },
-        ]}>
-        <MessageShimmer variant="page" />
-      </View>
-    );
-  }
+  // Keep FlashList mounted during initial load and fade skeleton over it
+  // so startRenderingFromBottom placement and scroll position do not jump
+  // when `isPending` flips to data. Optimistic `me` rows stay visible.
+  const showSkeleton = isPending && items.length === 0;
 
   if (isError && items.length === 0) {
     return (
@@ -329,7 +320,7 @@ function MessagesList({
         onScroll={onScroll}
         scrollEventThrottle={16}
         ListHeaderComponent={listHeader}
-        extraData={`${composerHeight}:${headerClearance}`}
+        extraData={`${composerHeight}:${headerClearance}:${showSkeleton ? 1 : 0}`}
         maintainVisibleContentPosition={{
           autoscrollToBottomThreshold: 0.2,
           startRenderingFromBottom: true,
@@ -337,6 +328,22 @@ function MessagesList({
         renderScrollComponent={renderScrollComponent}
         style={{ backgroundColor: theme.colors.bg }}
       />
+      {showSkeleton ? (
+        <Animated.View
+          pointerEvents="none"
+          entering={reduceMotion ? FadeIn.duration(0) : FadeIn.duration(150)}
+          exiting={reduceMotion ? FadeOut.duration(0) : FadeOut.duration(200)}
+          style={[
+            styles.skeletonOverlay,
+            {
+              backgroundColor: theme.colors.bg,
+              paddingBottom: composerClearance,
+              paddingTop: headerClearance,
+            },
+          ]}>
+          <MessageShimmer variant="page" />
+        </Animated.View>
+      ) : null}
       <ScrollToBottomFAB
         visible={fabVisible}
         onPress={scrollToBottom}
@@ -476,5 +483,13 @@ const styles = StyleSheet.create((theme) => ({
     position: "absolute",
     right: 0,
     zIndex: 3,
+  },
+  skeletonOverlay: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 2,
   },
 }));
