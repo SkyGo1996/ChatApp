@@ -46,8 +46,7 @@ export function messagesInfiniteOptions(conversationId: string | number) {
     queryFn: async ({ pageParam, client, queryKey }) => {
       if (pageParam === "tail") {
         // Mock POST is not in subsequent GETs — keep local `me` rows on refetch.
-        const previous =
-          client.getQueryData<MessagesInfiniteData>(queryKey);
+        const previous = client.getQueryData<MessagesInfiniteData>(queryKey);
         const page = await fetchNewestMessagesPage(conversationId);
         return preserveOutgoingOnTail(previous, page);
       }

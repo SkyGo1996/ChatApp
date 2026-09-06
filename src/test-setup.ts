@@ -32,19 +32,26 @@ jest.mock("react-native-keyboard-controller", () =>
 );
 /* eslint-enable @typescript-eslint/no-unsafe-return */
 
-// 5. Expo Crypto mock (for persist.ts MMKV encryptionKey generation)
-jest.mock("expo-crypto", () => ({
-  getRandomBytes: jest.fn((byteCount: number) => {
-    const arr = new Uint8Array(byteCount);
-    for (let i = 0; i < byteCount; i++) arr[i] = (i * 17 + 3) % 256;
-    return arr;
-  }),
-  getRandomBytesAsync: jest.fn((byteCount: number) => {
-    const arr = new Uint8Array(byteCount);
-    for (let i = 0; i < byteCount; i++) arr[i] = (i * 17 + 3) % 256;
-    return Promise.resolve(arr);
-  }),
-}));
+// 5. Expo Crypto mock (for persist.ts MMKV encryptionKey + local Message ids)
+jest.mock("expo-crypto", () => {
+  let uuidSeq = 0;
+  return {
+    getRandomBytes: jest.fn((byteCount: number) => {
+      const arr = new Uint8Array(byteCount);
+      for (let i = 0; i < byteCount; i++) arr[i] = (i * 17 + 3) % 256;
+      return arr;
+    }),
+    getRandomBytesAsync: jest.fn((byteCount: number) => {
+      const arr = new Uint8Array(byteCount);
+      for (let i = 0; i < byteCount; i++) arr[i] = (i * 17 + 3) % 256;
+      return Promise.resolve(arr);
+    }),
+    randomUUID: jest.fn(() => {
+      uuidSeq += 1;
+      return `00000000-0000-4000-8000-${String(uuidSeq).padStart(12, "0")}`;
+    }),
+  };
+});
 
 // 5b. Expo SecureStore in-memory mock (for persist.ts)
 // jest-expo auto-mocks expo-secure-store, but we provide deterministic in-memory impl

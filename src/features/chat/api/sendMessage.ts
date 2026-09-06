@@ -56,12 +56,11 @@ export function mapSentPostToMessage(post: {
 export async function sendMessage(input: SendMessageInput): Promise<Message> {
   const body = sanitizeMessageInput(input.text);
   if (body === null) {
-    const error: ApiError = {
+    throw Object.assign(new Error("Message body is empty after sanitization"), {
       status: 400,
       message: "Message body is empty after sanitization",
       raw: null,
-    };
-    throw error;
+    } satisfies ApiError);
   }
 
   const { data } = await client.post<ApiPost>(endpoints.chat.send, {
