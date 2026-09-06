@@ -7,7 +7,7 @@ function toDate(value: Date | string | number): Date | null {
 
 /**
  * FR2 conversation-row timestamp:
- * today → `hh:mm a`, yesterday → `Yesterday`, older → `MM/dd/yy`.
+ * today → `hh:mm a`, yesterday → `Yesterday`, older → `dd/MM/yy`.
  * Returns null for invalid input so the row can hide the timestamp.
  */
 export function formatConversationTimestamp(
@@ -17,7 +17,7 @@ export function formatConversationTimestamp(
   if (!date) return null;
   if (isToday(date)) return format(date, "hh:mm a");
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "MM/dd/yy");
+  return format(date, "dd/MM/yy");
 }
 
 /**
@@ -32,7 +32,7 @@ export function formatMessageTimestamp(
 }
 
 /**
- * FR3 centered date separator: `Today` / `Yesterday` / `MM/dd/yy`.
+ * FR3 centered date separator: `Today` / `Yesterday` / `dd/MM/yy`.
  */
 export function formatDateSeparator(
   value: Date | string | number
@@ -41,5 +41,5 @@ export function formatDateSeparator(
   if (!date) return null;
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "MM/dd/yy");
+  return format(date, "dd/MM/yy");
 }

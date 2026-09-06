@@ -20,18 +20,18 @@ describe("formatConversationTimestamp", () => {
     expect(formatConversationTimestamp(yesterday)).toBe("Yesterday");
   });
 
-  test("formats older dates as MM/dd/yy", () => {
+  test("formats older dates as dd/MM/yy", () => {
     expect(formatConversationTimestamp(new Date(2024, 0, 15, 14, 30))).toBe(
-      "01/15/24"
+      "15/01/24"
     );
   });
 
-  test("formats tomorrow as MM/dd/yy (future falls through to date)", () => {
+  test("formats tomorrow as dd/MM/yy (future falls through to date)", () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(12, 0, 0, 0);
-    const expected = `${String(tomorrow.getMonth() + 1).padStart(2, "0")}/${String(
-      tomorrow.getDate()
+    const expected = `${String(tomorrow.getDate()).padStart(2, "0")}/${String(
+      tomorrow.getMonth() + 1
     ).padStart(2, "0")}/${String(tomorrow.getFullYear()).slice(-2)}`;
     expect(formatConversationTimestamp(tomorrow)).toBe(expected);
   });
@@ -86,8 +86,8 @@ describe("formatDateSeparator", () => {
     expect(formatDateSeparator(yesterday)).toBe("Yesterday");
   });
 
-  test("returns MM/dd/yy for older dates", () => {
-    expect(formatDateSeparator(new Date(2024, 5, 3))).toBe("06/03/24");
+  test("returns dd/MM/yy for older dates", () => {
+    expect(formatDateSeparator(new Date(2024, 5, 3))).toBe("03/06/24");
   });
 
   test("returns null for invalid dates", () => {
