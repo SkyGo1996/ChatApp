@@ -47,6 +47,7 @@ import {
 } from "@/features/chat/components";
 import { useContactIdentity } from "@/features/chat/hooks/useContactIdentity";
 import { useMessages } from "@/features/chat/hooks/useMessages";
+import { useSendMessage } from "@/features/chat/hooks/useSendMessage";
 import {
   buildChatListItems,
   type ChatListItem,
@@ -128,23 +129,6 @@ type ListInsetItem = {
 
 type MessagesListItem = ChatListItem | ListInsetItem;
 
-const renderChatItem: ListRenderItem<MessagesListItem> = ({ item }) => {
-  if (item.type === "separator") {
-    return <DateSeparator label={item.label} />;
-  }
-  if (item.type === "inset") {
-    return (
-      <View
-        style={{ height: item.height }}
-        pointerEvents="none"
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-      />
-    );
-  }
-  return <MessageBubble message={item.message} marginTop={item.marginTop} />;
-};
-
 function keyExtractor(item: MessagesListItem): string {
   return item.key;
 }
@@ -156,9 +140,14 @@ function getItemType(item: MessagesListItem): string {
 type MessagesListProps = {
   conversationId: string;
   composerHeight: number;
+  onRetrySend: (localId: string) => void;
 };
 
-function MessagesList({ conversationId, composerHeight }: MessagesListProps) {
+function MessagesList({
+  conversationId,
+  composerHeight,
+  onRetrySend,
+}: MessagesListProps) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -208,6 +197,32 @@ function MessagesList({ conversationId, composerHeight }: MessagesListProps) {
   const renderScrollComponent = useCallback(
     (props: ScrollViewProps) => <ChatScrollView {...props} />,
     []
+  );
+
+  const renderItem = useCallback<ListRenderItem<MessagesListItem>>(
+    ({ item }) => {
+      if (item.type === "separator") {
+        return <DateSeparator label={item.label} />;
+      }
+      if (item.type === "inset") {
+        return (
+          <View
+            style={{ height: item.height }}
+            pointerEvents="none"
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
+        );
+      }
+      return (
+        <MessageBubble
+          message={item.message}
+          marginTop={item.marginTop}
+          onRetrySend={onRetrySend}
+        />
+      );
+    },
+    [onRetrySend]
   );
 
   const onStartReached = useCallback(() => {
@@ -267,7 +282,9 @@ function MessagesList({ conversationId, composerHeight }: MessagesListProps) {
     isFetchingPreviousPage,
   ]);
 
-  if (isPending) {
+  // Keep optimistic / local `me` rows visible while history is still loading
+  // or when GET failed after a local append.
+  if (isPending && items.length === 0) {
     return (
       <View
         style={[
@@ -304,7 +321,7 @@ function MessagesList({ conversationId, composerHeight }: MessagesListProps) {
         ref={listRef}
         testID="messages-list"
         data={listItems}
-        renderItem={renderChatItem}
+        renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemType={getItemType}
         onStartReached={onStartReached}
@@ -394,8 +411,19 @@ export default function ChatDetailScreen({
     [insets.bottom]
   );
 
-  // Ticket 08 replaces this no-op with useSendMessage.
-  const onSend = useCallback((_text: string) => {}, []);
+  const { send, retry } = useSendMessage(conversationId);
+  const onSend = useCallback(
+    (text: string) => {
+      void send(text);
+    },
+    [send]
+  );
+  const onRetrySend = useCallback(
+    (localId: string) => {
+      void retry(localId);
+    },
+    [retry]
+  );
 
   const body = (
     <KeyboardGestureArea
@@ -405,6 +433,7 @@ export default function ChatDetailScreen({
       <MessagesList
         conversationId={conversationId}
         composerHeight={composerHeight}
+        onRetrySend={onRetrySend}
       />
       {/* Absolute sticky composer floats over the list; a trailing list
           spacer reserves space so timestamps/bubbles never sit under the pill. */}
