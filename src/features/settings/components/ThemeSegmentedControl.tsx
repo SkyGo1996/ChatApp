@@ -8,7 +8,6 @@ import * as Haptics from "expo-haptics";
 import { Platform, View } from "react-native";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
-import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { glassColorScheme } from "@/theme/recipes";
 
@@ -24,7 +23,6 @@ import { SegmentedControl } from "@expo/ui/community/segmented-control";
 
 export function ThemeSegmentedControl() {
   const { mode, setMode } = useThemeMode();
-  const reduceMotion = useReduceMotion();
   const reduceTransparency = useReduceTransparency();
   const { theme } = useUnistyles();
 
@@ -33,9 +31,7 @@ export function ThemeSegmentedControl() {
   const handleValueChange = (value: string) => {
     const next = THEME_VALUE_TO_MODE[value];
     if (!next || next === mode) return;
-    if (!reduceMotion) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setMode(next);
   };
 

@@ -23,8 +23,8 @@ type Props = {
 
 /**
  * Conversation row: Avatar, Name, last-Message preview, timestamp.
- * Preview enrichment fails soft to placeholder; press scale + light haptic
- * respect Reduce Motion.
+ * Preview enrichment fails soft to placeholder; press scale respects
+ * Reduce Motion; light haptic fires on confirmed press (not scroll).
  */
 export function ConversationRow({ conversation }: Props) {
   const { preview } = useConversationPreview(conversation.id);
@@ -47,12 +47,15 @@ export function ConversationRow({ conversation }: Props) {
   const onPressIn = () => {
     if (reduceMotion) return;
     pressInScale(scale);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const onPressOut = () => {
     if (reduceMotion) return;
     pressOutScale(scale);
+  };
+
+  const onPress = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   return (
@@ -69,6 +72,7 @@ export function ConversationRow({ conversation }: Props) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Open chat with ${conversation.name}`}
+        onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}>
         <Animated.View style={[styles.row, animatedStyle]}>
