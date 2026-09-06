@@ -9,6 +9,7 @@ import { StyleSheet } from "react-native-unistyles";
 
 import { Avatar } from "@/components/Avatar";
 import { pressInScale, pressOutScale } from "@/components/pressScale";
+import { Shimmer } from "@/components/Shimmer";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { formatConversationTimestamp } from "@/utils/datetime";
 
@@ -27,11 +28,12 @@ type Props = {
  * Reduce Motion; light haptic fires on confirmed press (not scroll).
  */
 export function ConversationRow({ conversation }: Props) {
-  const { preview } = useConversationPreview(conversation.id);
+  const { preview, isPending } = useConversationPreview(conversation.id);
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
 
   // Prefer locally patched fields (ticket 08) over enrichment.
+  const showPreviewShimmer = isPending && conversation.lastMessage == null;
   const previewText =
     conversation.lastMessage ?? preview?.text ?? PREVIEW_PLACEHOLDER;
   const timestampSource =
@@ -93,9 +95,18 @@ export function ConversationRow({ conversation }: Props) {
                 </Text>
               ) : null}
             </View>
-            <Text style={styles.preview} numberOfLines={1}>
-              {previewText}
-            </Text>
+            {showPreviewShimmer ? (
+              <View
+                accessibilityLabel="Loading message preview"
+                accessibilityRole="progressbar"
+                style={styles.previewShimmer}>
+                <Shimmer width="80%" height={12} />
+              </View>
+            ) : (
+              <Text style={styles.preview} numberOfLines={1}>
+                {previewText}
+              </Text>
+            )}
           </View>
         </Animated.View>
       </Pressable>
@@ -147,6 +158,9 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.type.subhead.size,
     letterSpacing: theme.type.subhead.letterSpacing,
     lineHeight: theme.type.subhead.lineHeight,
+    marginTop: theme.space(0.5),
+  },
+  previewShimmer: {
     marginTop: theme.space(0.5),
   },
 }));

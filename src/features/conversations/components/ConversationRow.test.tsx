@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
@@ -38,6 +38,60 @@ const conversation = {
 };
 
 describe("ConversationRow", () => {
+  test("shows preview shimmer while enrichment is pending", async () => {
+    let resolveResponse!: (value: Response) => void;
+    const held = new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    });
+
+    server.use(http.get(postsPath, () => held));
+
+    const qc = createTestQueryClient();
+    await render(<ConversationRow conversation={conversation} />, {
+      wrapper: wrapperFor(qc),
+    });
+
+    expect(
+      await screen.findByLabelText("Loading message preview")
+    ).toBeTruthy();
+    expect(screen.queryByText("No messages yet")).toBeNull();
+
+    resolveResponse(
+      HttpResponse.json({
+        total: 0,
+        limit: 1,
+        offset: 0,
+        results: [],
+      })
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Loading message preview")).toBeNull();
+    });
+    expect(await screen.findByText("No messages yet")).toBeTruthy();
+  });
+
+  test("shows placeholder when enrichment returns empty", async () => {
+    server.use(
+      http.get(postsPath, () =>
+        HttpResponse.json({
+          total: 0,
+          limit: 1,
+          offset: 0,
+          results: [],
+        })
+      )
+    );
+
+    const qc = createTestQueryClient();
+    await render(<ConversationRow conversation={conversation} />, {
+      wrapper: wrapperFor(qc),
+    });
+
+    expect(await screen.findByText("No messages yet")).toBeTruthy();
+    expect(screen.queryByLabelText("Loading message preview")).toBeNull();
+  });
+
   test("shows placeholder and hides timestamp when enrichment fails", async () => {
     server.use(
       http.get(postsPath, () =>
