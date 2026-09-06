@@ -10,11 +10,11 @@ import { createTestQueryClient } from "@/test-utils";
 import { MESSAGES_PAGE_SIZE } from "@/features/chat/api/fetchMessagesPage";
 import { makePost } from "@/features/chat/test-fixtures";
 
-import { useMessages } from "./useMessages";
+import { getOlderMessagesPageParam, useMessages } from "./useMessages";
 
 const contactId = 5;
 const postsPath = mswMessagesCollectionUrl();
-const offsets: number[] = [];
+const requests: { offset: number; limit: number }[] = [];
 
 const TOTAL = 45;
 
@@ -23,7 +23,7 @@ const server = setupServer(
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get("limit") ?? 20);
     const offset = Number(url.searchParams.get("offset") ?? 0);
-    offsets.push(offset);
+    requests.push({ offset, limit });
     const results = Array.from(
       { length: Math.min(limit, TOTAL - offset) },
       (_, i) =>
@@ -46,7 +46,7 @@ beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
 });
 afterEach(() => {
-  offsets.length = 0;
+  requests.length = 0;
   server.resetHandlers();
 });
 afterAll(() => server.close());
@@ -61,6 +61,20 @@ function wrapperFor(clientInstance: QueryClient) {
   };
 }
 
+describe("getOlderMessagesPageParam", () => {
+  test("returns non-overlapping remainder window when offset < limit", () => {
+    expect(getOlderMessagesPageParam({ offset: 25, limit: 20 })).toEqual({
+      offset: 5,
+      limit: 20,
+    });
+    expect(getOlderMessagesPageParam({ offset: 5, limit: 20 })).toEqual({
+      offset: 0,
+      limit: 5,
+    });
+    expect(getOlderMessagesPageParam({ offset: 0, limit: 5 })).toBeUndefined();
+  });
+});
+
 describe("useMessages", () => {
   test("loads chronological tail without reversing", async () => {
     const qc = createTestQueryClient();
@@ -71,28 +85,42 @@ describe("useMessages", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.items).toHaveLength(MESSAGES_PAGE_SIZE);
     // Probe offset 0 then tail at total - page size
-    expect(offsets).toEqual([0, 25]);
+    expect(requests).toEqual([
+      { offset: 0, limit: 20 },
+      { offset: 25, limit: 20 },
+    ]);
     expect(result.current.items[0]?.text).toBe("Body 26");
     expect(result.current.items[MESSAGES_PAGE_SIZE - 1]?.text).toBe("Body 45");
     expect(result.current.hasPreviousPage).toBe(true);
   });
 
-  test("fetchPreviousPage prepends older Messages without reversing", async () => {
+  test("fetchPreviousPage prepends older Messages without overlapping remainder", async () => {
     const qc = createTestQueryClient();
     const { result } = await renderHook(() => useMessages(contactId), {
       wrapper: wrapperFor(qc),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    offsets.length = 0;
+    requests.length = 0;
 
     await result.current.fetchPreviousPage();
     await waitFor(() => expect(result.current.items.length).toBe(40));
 
-    // Older page at previousCursor=5
-    expect(offsets).toEqual([5]);
+    expect(requests).toEqual([{ offset: 5, limit: 20 }]);
     expect(result.current.items[0]?.text).toBe("Body 6");
     expect(result.current.items[39]?.text).toBe("Body 45");
+    expect(result.current.hasPreviousPage).toBe(true);
+
+    requests.length = 0;
+    await result.current.fetchPreviousPage();
+    await waitFor(() => expect(result.current.items.length).toBe(TOTAL));
+
+    // Remainder window: offset 0 with limit 5 (not 20) — no overlap
+    expect(requests).toEqual([{ offset: 0, limit: 5 }]);
+    const ids = result.current.items.map((m) => m.id);
+    expect(ids).toEqual(Array.from({ length: TOTAL }, (_, i) => i + 1));
+    expect(new Set(ids).size).toBe(TOTAL);
+    expect(result.current.hasPreviousPage).toBe(false);
   });
 
   test("empty collection yields empty items", async () => {

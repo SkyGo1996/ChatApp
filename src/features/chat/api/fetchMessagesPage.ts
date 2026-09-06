@@ -25,6 +25,8 @@ type ApiOffsetPage = {
 export type MessagesPage = CursorPage<Message> & {
   total: number;
   offset: number;
+  /** Requested page size — used to compute non-overlapping older windows. */
+  limit: number;
 };
 
 /**
@@ -66,7 +68,8 @@ export async function fetchMessagesPage(
     nextCursor: adapted.nextCursor,
     previousCursor: adapted.previousCursor,
     total: data.total,
-    offset: data.offset,
+    offset,
+    limit,
   };
 }
 

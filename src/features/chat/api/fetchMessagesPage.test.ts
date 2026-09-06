@@ -96,6 +96,7 @@ describe("fetchMessagesPage", () => {
     expect(page.previousCursor).toBeNull();
     expect(page.total).toBe(60);
     expect(page.offset).toBe(0);
+    expect(page.limit).toBe(MESSAGES_PAGE_SIZE);
   });
 
   test("passes offset and sets previousCursor on later pages", async () => {
@@ -120,6 +121,8 @@ describe("fetchMessagesPage", () => {
     expect(page.items).toHaveLength(20);
     expect(page.nextCursor).toBe(40);
     expect(page.previousCursor).toBe(0);
+    expect(page.limit).toBe(MESSAGES_PAGE_SIZE);
+    expect(page.offset).toBe(20);
   });
 
   test("rejects with normalized ApiError on 500", async () => {
@@ -205,6 +208,7 @@ describe("fetchNewestMessagesPage", () => {
     const page = await fetchNewestMessagesPage(contactId);
     expect(offsets).toEqual(["0", "25"]);
     expect(page.offset).toBe(25);
+    expect(page.limit).toBe(MESSAGES_PAGE_SIZE);
     expect(page.items[0]?.text).toBe("Body 26");
     expect(page.items[page.items.length - 1]?.text).toBe("Body 45");
     expect(page.previousCursor).toBe(5);
