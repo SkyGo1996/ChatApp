@@ -34,9 +34,10 @@ import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
 import { chromeHeader } from "@/theme/recipes";
-import { motion } from "@/theme/tokens";
+import { motion, space } from "@/theme/tokens";
 
 import {
+  CHAT_INPUT_NATIVE_ID,
   ChatHeaderTitle,
   Composer,
   DateSeparator,
@@ -44,10 +45,6 @@ import {
   MessageShimmer,
   ScrollToBottomFAB,
 } from "@/features/chat/components";
-import {
-  CHAT_INPUT_NATIVE_ID,
-  COMPOSER_MARGIN,
-} from "@/features/chat/composerIds";
 import { useContactIdentity } from "@/features/chat/hooks/useContactIdentity";
 import { useMessages } from "@/features/chat/hooks/useMessages";
 import {
@@ -56,8 +53,8 @@ import {
 } from "@/features/chat/screens/buildChatListItems";
 
 const SCROLL_FAB_THRESHOLD_PX = 200;
-/** Fallback until Composer onLayout fires (pill + pad). */
-const COMPOSER_HEIGHT_FALLBACK = 72;
+/** Pill tap minHeight 48 (HIG/M3, not spacing scale) + wrap paddingTop space(2). */
+const COMPOSER_HEIGHT_FALLBACK = 48 + space(2);
 const COMPOSER_INSET_KEY = "composer-inset";
 const HEADER_INSET_KEY = "header-inset";
 /** Compact iOS nav bar content height (ChatHeaderTitle avatar is 44pt). */
@@ -85,7 +82,7 @@ const ChatScrollView = forwardRef<
       keyboardDismissMode="interactive"
       // Composer keeps home-indicator padding; sticky opened-offset tucks it
       // into the keyboard, so list lift is keyboardHeight minus that tuck.
-      offset={Math.max(0, insets.bottom - COMPOSER_MARGIN)}
+      offset={Math.max(0, insets.bottom - space(2))}
     />
   );
 });
@@ -342,7 +339,7 @@ export default function ChatDetailScreen({
   const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   const [composerHeight, setComposerHeight] = useState(
-    COMPOSER_HEIGHT_FALLBACK + Math.max(insets.bottom, COMPOSER_MARGIN)
+    COMPOSER_HEIGHT_FALLBACK + Math.max(insets.bottom, space(2))
   );
   const contact = useContactIdentity(conversationId, {
     name: contactName,
@@ -392,7 +389,7 @@ export default function ChatDetailScreen({
   const stickyOffset = useMemo(
     () => ({
       closed: 0,
-      opened: Math.max(0, insets.bottom - COMPOSER_MARGIN),
+      opened: Math.max(0, insets.bottom - space(2)),
     }),
     [insets.bottom]
   );

@@ -4,13 +4,13 @@ import {
   isGlassEffectAPIAvailable,
   isLiquidGlassAvailable,
 } from "expo-glass-effect";
-import * as Haptics from "expo-haptics";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   Platform,
   Pressable,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
   type LayoutChangeEvent,
   type StyleProp,
@@ -34,8 +34,8 @@ import { MESSAGE_MAX_LENGTH, sanitizeMessageInput } from "@/utils/sanitize";
 
 import {
   CHAT_INPUT_NATIVE_ID,
-  COMPOSER_MARGIN,
-} from "@/features/chat/composerIds";
+  composerInputLineMetrics,
+} from "./composerLayout";
 
 type Props = {
   onSend: (text: string) => void;
@@ -151,6 +151,7 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
+  const { fontScale } = useWindowDimensions();
   const [draft, setDraft] = useState("");
   const scale = useSharedValue(1);
 
@@ -158,7 +159,8 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
   const canSend = !disabled && sanitized !== null;
 
   const sendSize = Platform.OS === "android" ? 48 : 44;
-  const maxInputHeight = theme.type.body.lineHeight * 4;
+  const { lineHeight: scaledLineHeight, maxHeight: maxInputHeight } =
+    composerInputLineMetrics(theme.type.body.lineHeight, fontScale);
 
   const animatedSendStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -189,16 +191,13 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
   const handleSend = () => {
     const text = sanitizeMessageInput(draft);
     if (text === null || disabled) return;
-    if (!reduceMotion) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     onSend(text);
     setDraft("");
   };
 
   // Always keep home-indicator inset. KeyboardStickyView offset.opened tucks
   // this padding into the keyboard so the pill does not jump on hide.
-  const bottomPad = Math.max(insets.bottom, COMPOSER_MARGIN);
+  const bottomPad = Math.max(insets.bottom, theme.space(2));
 
   return (
     <View
@@ -222,10 +221,8 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
               styles.input,
               {
                 color: theme.colors.text,
+                lineHeight: scaledLineHeight,
                 maxHeight: maxInputHeight,
-                backgroundColor: disabled
-                  ? theme.colors.disabled
-                  : "transparent",
               },
             ]}
             accessibilityLabel="Message input"
@@ -288,7 +285,6 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: theme.type.body.weight,
     includeFontPadding: false,
     letterSpacing: theme.type.body.letterSpacing,
-    lineHeight: theme.type.body.lineHeight,
     margin: 0,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -300,7 +296,9 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: "center",
   },
   sendLabel: {
-    fontSize: theme.type.subhead.size,
+    fontSize: theme.type.headline.size,
     fontWeight: theme.type.headline.weight,
+    letterSpacing: theme.type.headline.letterSpacing,
+    lineHeight: theme.type.headline.lineHeight,
   },
 }));
