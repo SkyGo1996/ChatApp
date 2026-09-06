@@ -91,7 +91,12 @@ export function chromeComposer(theme: AppTheme): ChromeRecipe {
 /** Action / Block sheet. */
 export function chromeSheet(theme: AppTheme): ChromeRecipe {
   if (isIOS()) return iosGlassChrome(theme);
-  return androidTonalChrome(theme.colors.surface3, 3, theme);
+  // Light: white surface cards; dark: keep elevated tonal surface3.
+  const bg =
+    theme.colors.bg === darkTheme.colors.bg
+      ? theme.colors.surface3
+      : theme.colors.surface;
+  return androidTonalChrome(bg, 3, theme);
 }
 
 /** Scroll-to-bottom FAB. */

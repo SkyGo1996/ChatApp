@@ -130,6 +130,11 @@ describe("chrome recipes — platform mapping", () => {
     expect(bar.blurRadius).toBeUndefined();
     expect(bar.elevation).toBe(2);
 
+    const sheetLight = chromeSheet(lightTheme);
+    expect(sheetLight.backgroundColor).toBe(lightTheme.colors.surface);
+    expect(sheetLight.useGlass).toBe(false);
+    expect(sheetLight.elevation).toBe(3);
+
     const sheet = chromeSheet(darkTheme);
     expect(sheet.backgroundColor).toBe(darkTheme.colors.surface3);
     expect(sheet.borderColor).toBe(darkTheme.colors.border);

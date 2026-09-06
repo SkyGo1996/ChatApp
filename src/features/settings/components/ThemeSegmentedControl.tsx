@@ -25,6 +25,8 @@ export function ThemeSegmentedControl() {
   const { mode, setMode } = useThemeMode();
   const reduceTransparency = useReduceTransparency();
   const { theme } = useUnistyles();
+  // Follow in-app theme (not OS) so Compose/SwiftUI Host text colors stay readable.
+  const appearance = glassColorScheme(theme);
 
   const selectedIndex = THEME_MODE_TO_INDEX[mode] ?? 0;
 
@@ -55,6 +57,7 @@ export function ThemeSegmentedControl() {
           selectedIndex={selectedIndex}
           onValueChange={handleValueChange}
           tintColor={theme.colors.primary}
+          appearance={appearance}
           testID="theme-segmented-control"
           style={styles.segment}
         />
@@ -87,13 +90,14 @@ export function ThemeSegmentedControl() {
         <GlassView
           style={[styles.pillIOS, iosBorder]}
           tintColor={theme.colors.glassTint}
-          colorScheme={glassColorScheme(theme)}
+          colorScheme={appearance}
           glassEffectStyle="regular">
           <SegmentedControl
             values={[...THEME_VALUES]}
             selectedIndex={selectedIndex}
             onValueChange={handleValueChange}
             tintColor={theme.colors.primary}
+            appearance={appearance}
             testID="theme-segmented-control"
             style={styles.segment}
           />
@@ -121,6 +125,7 @@ export function ThemeSegmentedControl() {
             selectedIndex={selectedIndex}
             onValueChange={handleValueChange}
             tintColor={theme.colors.primary}
+            appearance={appearance}
             testID="theme-segmented-control"
             style={styles.segment}
           />
@@ -147,6 +152,7 @@ export function ThemeSegmentedControl() {
         selectedIndex={selectedIndex}
         onValueChange={handleValueChange}
         tintColor={theme.colors.primary}
+        appearance={appearance}
         testID="theme-segmented-control"
         style={styles.segment}
       />
