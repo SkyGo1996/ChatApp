@@ -1,56 +1,95 @@
-# Welcome to your Expo app 👋
+# ChatApp
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A minimal 1-to-1 chat app built with Expo SDK 57 (iOS and Android). User can view conversations, read message history, send text optimistically, view a contact profile with client-only block, and manage theme (System / Light / Dark).
+
+## UI/UX
+
+Platform-adaptive UI via Unistyles: **iOS Liquid Glass** and **Android M3 Expressive** tonal surfaces, with the same layouts on both platforms. Theme follows System by default, with Light and Dark overrides.
+
+### Conversations
+
+| iOS                                                        | Android                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| ![Conversations on iOS](screenshots/iOS/conversations.png) | ![Conversations on Android](screenshots/android/conversations.png) |
+
+### Chat
+
+| iOS                                      | Android                                          |
+| ---------------------------------------- | ------------------------------------------------ |
+| ![Chat on iOS](screenshots/iOS/chat.png) | ![Chat on Android](screenshots/android/chat.png) |
+
+### Profile
+
+| iOS                                            | Android                                                |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| ![Profile on iOS](screenshots/iOS/profile.png) | ![Profile on Android](screenshots/android/profile.png) |
+
+### Block sheet
+
+| iOS                                                     | Android                                                         |
+| ------------------------------------------------------- | --------------------------------------------------------------- |
+| ![Block sheet on iOS](screenshots/iOS/chat_blocked.png) | ![Block sheet on Android](screenshots/android/chat_blocked.png) |
+
+### Settings
+
+| iOS                                              | Android                                                  |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| ![Settings on iOS](screenshots/iOS/settings.png) | ![Settings on Android](screenshots/android/settings.png) |
+
+### Theme — Dark
+
+| iOS                                                          | Android                                                              |
+| ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| ![Theme dark on iOS](screenshots/iOS/conversations_dark.png) | ![Theme dark on Android](screenshots/android/conversations_dark.png) |
+
+## Requirements
+
+- Node.js 20+
+- [pnpm](https://pnpm.io/)
+- Xcode (iOS) and/or Android Studio (Android)
 
 ## Get started
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
 ```bash
-npm run reset-project
+pnpm install
+pnpm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then open the app in a development build, iOS simulator, or Android emulator.
 
-### Other setup steps
+### Scripts
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+| Command          | Description                 |
+| ---------------- | --------------------------- |
+| `pnpm start`     | Start Expo                  |
+| `pnpm ios`       | Run on iOS                  |
+| `pnpm android`   | Run on Android              |
+| `pnpm test`      | Jest unit / component tests |
+| `pnpm lint`      | ESLint                      |
+| `pnpm format`    | Prettier write              |
+| `pnpm typecheck` | TypeScript `--noEmit`       |
 
-## Learn more
+## Project structure
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+src/
+  app/           Expo Router routes and layouts only; screens live in features/
+  features/      Domain modules: conversations, chat, profile, settings
+  services/      External integrations (API transport)
+  lib/           Third-party clients and providers
+  store/         Client-only Redux Toolkit
+  utils/         Pure helpers
+  theme/         Unistyles tokens and themes
+  components/    Shared UI components
+  hooks/         Shared device-preference hooks (Reduce Motion / Transparency)
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Architecture
 
-## Join the community
+- All HTTP uses one axios client. Endpoints live only in `src/services/api/endpoints.ts`.
+- TanStack Query owns server data (conversations, messages, profile). Redux Toolkit owns client-only Block and Theme. Block persist is encrypted; Theme persist is plain MMKV.
+- Query keys are a single factory in `src/lib/query-keys.ts`, so a successful send can patch the conversations preview instead of refetching.
 
-Join our community of developers creating universal apps.
+UI is platform-adaptive via Unistyles: **iOS Liquid Glass**, **Android M3 Expressive** tonal surfaces.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Send is optimistic: when send clicked, append to query data, then set as sending. Once server return success, replace data with server data; failure gets inline retry; failed sends stay in memory-only (query-cache) and dropped on restart.
