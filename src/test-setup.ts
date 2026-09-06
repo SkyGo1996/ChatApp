@@ -455,6 +455,43 @@ jest.mock("@expo/ui/jetpack-compose", () => {
   const MockIcon = () => React.createElement(View, { testID: "expo-icon" });
   const MockHost = ({ children }: { children: React.ReactNode }) =>
     React.createElement(View, null, children);
+  function MockSegmentedButton({
+    children,
+    onClick,
+    selected,
+  }: {
+    children?: React.ReactNode;
+    onClick?: () => void;
+    selected?: boolean;
+  }) {
+    return React.createElement(
+      Pressable,
+      {
+        onPress: onClick,
+        accessibilityRole: "radio" as const,
+        accessibilityState: { selected: !!selected },
+        testID: "expo-segmented-button",
+      },
+      children
+    );
+  }
+  MockSegmentedButton.Label = function Label({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  const MockSingleChoiceSegmentedButtonRow = ({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) =>
+    React.createElement(
+      View,
+      { accessibilityRole: "radiogroup" as const },
+      children
+    );
   return {
     Host: MockHost,
     AlertDialog: MockAlertDialog,
@@ -462,6 +499,8 @@ jest.mock("@expo/ui/jetpack-compose", () => {
     Button: MockButton,
     Text: MockText,
     Icon: MockIcon,
+    SegmentedButton: MockSegmentedButton,
+    SingleChoiceSegmentedButtonRow: MockSingleChoiceSegmentedButtonRow,
   };
 });
 

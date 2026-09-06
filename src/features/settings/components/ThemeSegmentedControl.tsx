@@ -18,8 +18,18 @@ import {
 } from "@/features/settings/constants";
 import { useThemeMode } from "@/features/settings/hooks/useThemeMode";
 
-// Native cross-platform segmented control (iOS: UISegmentedControl via SwiftUI Picker, Android: Material SingleChoiceRow)
+// iOS: community drop-in (SwiftUI segmented Picker). Android: Compose SegmentedButton
+// so we can set activeContentColor — community only maps tintColor → activeContainerColor.
 import { SegmentedControl } from "@expo/ui/community/segmented-control";
+import {
+  Text as ComposeText,
+  Host,
+  SegmentedButton,
+  SingleChoiceSegmentedButtonRow,
+} from "@expo/ui/jetpack-compose";
+
+/** Selected segment label on primary — matches me-bubble / Retry contrast. */
+const SELECTED_SEGMENT_TEXT = "#FFFFFF";
 
 export function ThemeSegmentedControl() {
   const { mode, setMode } = useThemeMode();
@@ -45,15 +55,30 @@ export function ThemeSegmentedControl() {
         style={styles.pillAndroid}
         accessibilityLabel="Theme selector"
         testID="theme-segment-android-wrap">
-        <SegmentedControl
-          values={[...THEME_VALUES]}
-          selectedIndex={selectedIndex}
-          onValueChange={handleValueChange}
-          tintColor={theme.colors.primary}
-          appearance={appearance}
-          testID="theme-segmented-control"
-          style={styles.segment}
-        />
+        <View style={styles.segment} testID="theme-segmented-control">
+          <Host
+            matchContents={{ vertical: true }}
+            colorScheme={appearance}
+            style={styles.segment}>
+            <SingleChoiceSegmentedButtonRow>
+              {THEME_VALUES.map((label, index) => (
+                <SegmentedButton
+                  key={label}
+                  selected={index === selectedIndex}
+                  onClick={() => handleValueChange(label)}
+                  colors={{
+                    activeContainerColor: theme.colors.primary,
+                    activeContentColor: SELECTED_SEGMENT_TEXT,
+                    inactiveContentColor: theme.colors.text,
+                  }}>
+                  <SegmentedButton.Label>
+                    <ComposeText>{label}</ComposeText>
+                  </SegmentedButton.Label>
+                </SegmentedButton>
+              ))}
+            </SingleChoiceSegmentedButtonRow>
+          </Host>
+        </View>
       </View>
     );
   }
