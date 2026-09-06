@@ -30,11 +30,14 @@ import Animated, { FadeIn, FadeInUp, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
 import { chromeHeader } from "@/theme/recipes";
 import { motion, space } from "@/theme/tokens";
+
+import { MessagesSquare } from "lucide-react-native";
 
 import {
   CHAT_INPUT_NATIVE_ID,
@@ -306,6 +309,29 @@ function MessagesList({
     );
   }
 
+  if (!isPending && items.length === 0) {
+    return (
+      <View
+        style={[
+          styles.listWrap,
+          styles.emptyWrap,
+          { paddingBottom: composerClearance, paddingTop: headerClearance },
+        ]}>
+        <EmptyState
+          title="No messages yet"
+          secondary="Say hello to start the conversation."
+          illustration={
+            <MessagesSquare
+              size={48}
+              color={theme.colors.textSecondary}
+              strokeWidth={1.5}
+            />
+          }
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.listWrap}>
       <FlashList
@@ -476,6 +502,11 @@ const styles = StyleSheet.create((theme) => ({
   },
   listWrap: {
     flex: 1,
+  },
+  emptyWrap: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
   },
   composerSticky: {
     bottom: 0,
