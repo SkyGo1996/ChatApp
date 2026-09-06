@@ -46,11 +46,12 @@ describe("Avatar", () => {
     expect(screen.getByText("?")).toBeTruthy();
   });
 
-  test("resets initials when recyclingKey / name changes", async () => {
+  test("resets initials when recyclingKey / name changes without remount key", async () => {
     const { rerender } = await render(
       <Avatar name="Jane Doe" recyclingKey="1" testID="avatar" />
     );
     expect(screen.getByText("JD")).toBeTruthy();
+    const container = screen.getByTestId("avatar");
 
     await rerender(
       <Avatar name="Ada Lovelace" recyclingKey="2" testID="avatar" />
@@ -58,9 +59,11 @@ describe("Avatar", () => {
     expect(screen.getByText("AL")).toBeTruthy();
     expect(screen.queryByText("JD")).toBeNull();
     expect(screen.getByLabelText("Ada Lovelace avatar")).toBeTruthy();
+    // Same host instance — recycle resets state without React key remount.
+    expect(screen.getByTestId("avatar")).toBe(container);
   });
 
-  test("updates initials on name-only change (key ignores name)", async () => {
+  test("updates initials on name-only change (identity ignores name)", async () => {
     const { rerender } = await render(
       <Avatar name="Jane Doe" recyclingKey="1" testID="avatar" />
     );

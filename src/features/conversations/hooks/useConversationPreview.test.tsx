@@ -7,7 +7,10 @@ import { type ReactNode } from "react";
 import { mswMessagesCollectionUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
 import { createTestQueryClient } from "@/test-utils";
 
-import { useConversationPreview } from "./useConversationPreview";
+import {
+  useConversationPreview,
+  usePrefetchConversationPreviews,
+} from "./useConversationPreview";
 
 const contactId = 7;
 const postsPath = mswMessagesCollectionUrl();
@@ -115,5 +118,68 @@ describe("useConversationPreview", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.preview).toBeNull();
+  });
+
+  test("enabled:false does not fetch", async () => {
+    let hit = false;
+    server.use(
+      http.get(postsPath, () => {
+        hit = true;
+        return HttpResponse.json({
+          total: 0,
+          limit: 1,
+          offset: 0,
+          results: [],
+        });
+      })
+    );
+
+    const qc = createTestQueryClient();
+    const { result } = await renderHook(
+      () => useConversationPreview(contactId, { enabled: false }),
+      { wrapper: wrapperFor(qc) }
+    );
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(result.current.preview).toBeNull();
+    expect(hit).toBe(false);
+  });
+});
+
+describe("usePrefetchConversationPreviews", () => {
+  test("prefetches previews for items without lastMessage", async () => {
+    const seenUserIds: string[] = [];
+    server.use(
+      http.get(postsPath, ({ request }) => {
+        const url = new URL(request.url);
+        seenUserIds.push(url.searchParams.get("userId") ?? "");
+        return HttpResponse.json({
+          total: 0,
+          limit: 1,
+          offset: 0,
+          results: [],
+        });
+      })
+    );
+
+    const qc = createTestQueryClient();
+    await renderHook(
+      () =>
+        usePrefetchConversationPreviews([
+          { id: 1, name: "A", avatar: "a" },
+          {
+            id: 2,
+            name: "B",
+            avatar: "b",
+            lastMessage: "patched",
+            lastMessageAt: "2024-01-01T00:00:00Z",
+          },
+          { id: 3, name: "C", avatar: "c" },
+        ]),
+      { wrapper: wrapperFor(qc) }
+    );
+
+    await waitFor(() => expect(seenUserIds.length).toBe(2));
+    expect(seenUserIds.sort()).toEqual(["1", "3"]);
   });
 });

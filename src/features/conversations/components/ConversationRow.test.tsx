@@ -146,10 +146,12 @@ describe("ConversationRow", () => {
     expect(screen.getByText(/^\d{2}:\d{2} (AM|PM)$/)).toBeTruthy();
   });
 
-  test("prefers patched lastMessage over enrichment", async () => {
+  test("prefers patched lastMessage and skips enrichment fetch", async () => {
+    let hit = false;
     server.use(
-      http.get(postsPath, () =>
-        HttpResponse.json({
+      http.get(postsPath, () => {
+        hit = true;
+        return HttpResponse.json({
           total: 1,
           limit: 1,
           offset: 0,
@@ -164,8 +166,8 @@ describe("ConversationRow", () => {
               createdAt: "2024-01-15T12:00:00Z",
             },
           ],
-        })
-      )
+        });
+      })
     );
 
     const qc = createTestQueryClient();
@@ -182,5 +184,8 @@ describe("ConversationRow", () => {
 
     expect(await screen.findByText("Optimistic patch")).toBeTruthy();
     expect(screen.queryByText("From network")).toBeNull();
+    expect(screen.queryByLabelText("Loading message preview")).toBeNull();
+    // enabled:false — no GET when lastMessage is already patched.
+    expect(hit).toBe(false);
   });
 });

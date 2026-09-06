@@ -1,6 +1,6 @@
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { MessagesSquare } from "lucide-react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -19,6 +19,7 @@ import {
   ConversationRow,
   ConversationShimmer,
 } from "@/features/conversations/components";
+import { usePrefetchConversationPreviews } from "@/features/conversations/hooks/useConversationPreview";
 import { useConversations } from "@/features/conversations/hooks/useConversations";
 import type { Conversation } from "@/features/conversations/types";
 
@@ -79,6 +80,8 @@ function ConversationsList() {
     hasNextPage,
     fetchNextPage,
   } = useConversations();
+  // Warm preview cache when pages land — not when FlashList cells bind.
+  usePrefetchConversationPreviews(items);
   // NativeTabs: Android wraps screens in bottom SafeAreaView. iOS ScrollView
   // gets auto insets, but FlashList does not — clear the floating glass bar
   // plus home-indicator inset so the last row isn't covered.
@@ -143,6 +146,24 @@ function ConversationsList() {
     theme.colors.primary,
   ]);
 
+  const contentContainerStyle = useMemo(
+    () => [styles.listContent, { paddingBottom: listBottomPad }],
+    [listBottomPad]
+  );
+
+  const refreshing = isRefetching && !isFetchingNextPage;
+  const refreshControl = useMemo(
+    () => (
+      <RefreshControl
+        testID="conversations-refresh"
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tintColor={theme.colors.primary}
+      />
+    ),
+    [refreshing, onRefresh, theme.colors.primary]
+  );
+
   if (isPending) {
     return <ConversationShimmer />;
   }
@@ -183,18 +204,8 @@ function ConversationsList() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         style={styles.list}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: listBottomPad },
-        ]}
-        refreshControl={
-          <RefreshControl
-            testID="conversations-refresh"
-            refreshing={isRefetching && !isFetchingNextPage}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-          />
-        }
+        contentContainerStyle={contentContainerStyle}
+        refreshControl={refreshControl}
       />
     </View>
   );

@@ -32,8 +32,8 @@ describe("buildChatListItems", () => {
       "separator",
       "message",
     ]);
-    expect(items[0]).toMatchObject({ type: "separator", label: "01/15/24" });
-    expect(items[3]).toMatchObject({ type: "separator", label: "01/16/24" });
+    expect(items[0]).toMatchObject({ type: "separator", label: "15/01/24" });
+    expect(items[3]).toMatchObject({ type: "separator", label: "16/01/24" });
     const messages = items.filter((i) => i.type === "message");
     expect(
       messages.map((m) => (m.type === "message" ? m.message.id : null))

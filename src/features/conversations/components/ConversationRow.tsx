@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
-import { Link } from "expo-router";
+import { router } from "expo-router";
+import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -9,7 +10,6 @@ import { StyleSheet } from "react-native-unistyles";
 
 import { Avatar } from "@/components/Avatar";
 import { pressInScale, pressOutScale } from "@/components/pressScale";
-import { Shimmer } from "@/components/Shimmer";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { formatConversationTimestamp } from "@/utils/datetime";
 
@@ -26,14 +26,20 @@ type Props = {
  * Conversation row: Avatar, Name, last-Message preview, timestamp.
  * Preview enrichment fails soft to placeholder; press scale respects
  * Reduce Motion; light haptic fires on confirmed press (not scroll).
+ * Memoized + router.push (not Link) so FlashList recycle stays cheap.
  */
-export function ConversationRow({ conversation }: Props) {
-  const { preview, isPending } = useConversationPreview(conversation.id);
+export const ConversationRow = memo(function ConversationRow({
+  conversation,
+}: Props) {
+  const hasPatchedPreview = conversation.lastMessage != null;
+  const { preview, isPending } = useConversationPreview(conversation.id, {
+    enabled: !hasPatchedPreview,
+  });
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
 
   // Prefer locally patched fields (ticket 08) over enrichment.
-  const showPreviewShimmer = isPending && conversation.lastMessage == null;
+  const showPreviewPending = isPending && !hasPatchedPreview;
   const previewText =
     conversation.lastMessage ?? preview?.text ?? PREVIEW_PLACEHOLDER;
   const timestampSource =
@@ -58,61 +64,58 @@ export function ConversationRow({ conversation }: Props) {
 
   const onPress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: "/chats/[id]",
+      params: {
+        id: String(conversation.id),
+        name: conversation.name,
+        avatar: conversation.avatar,
+      },
+    });
   };
 
   return (
-    <Link
-      href={{
-        pathname: "/chats/[id]",
-        params: {
-          id: String(conversation.id),
-          name: conversation.name,
-          avatar: conversation.avatar,
-        },
-      }}
-      asChild>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open chat with ${conversation.name}`}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}>
-        <Animated.View style={[styles.row, animatedStyle]}>
-          <Avatar
-            name={conversation.name}
-            uri={conversation.avatar}
-            size={48}
-            recyclingKey={String(conversation.id)}
-          />
-          <View style={styles.body}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name} numberOfLines={1}>
-                {conversation.name}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open chat with ${conversation.name}`}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}>
+      <Animated.View style={[styles.row, animatedStyle]}>
+        <Avatar
+          name={conversation.name}
+          uri={conversation.avatar}
+          size={48}
+          recyclingKey={String(conversation.id)}
+        />
+        <View style={styles.body}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {conversation.name}
+            </Text>
+            {timestamp ? (
+              <Text style={styles.timestamp} numberOfLines={1}>
+                {timestamp}
               </Text>
-              {timestamp ? (
-                <Text style={styles.timestamp} numberOfLines={1}>
-                  {timestamp}
-                </Text>
-              ) : null}
-            </View>
-            {showPreviewShimmer ? (
-              <View
-                accessibilityLabel="Loading message preview"
-                accessibilityRole="progressbar"
-                style={styles.previewShimmer}>
-                <Shimmer width="80%" height={12} />
-              </View>
-            ) : (
-              <Text style={styles.preview} numberOfLines={1}>
-                {previewText}
-              </Text>
-            )}
+            ) : null}
           </View>
-        </Animated.View>
-      </Pressable>
-    </Link>
+          {showPreviewPending ? (
+            <View
+              accessibilityLabel="Loading message preview"
+              accessibilityRole="progressbar"
+              style={styles.previewPending}>
+              <View style={styles.previewPendingBar} />
+            </View>
+          ) : (
+            <Text style={styles.preview} numberOfLines={1}>
+              {previewText}
+            </Text>
+          )}
+        </View>
+      </Animated.View>
+    </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create((theme) => ({
   row: {
@@ -160,7 +163,13 @@ const styles = StyleSheet.create((theme) => ({
     lineHeight: theme.type.subhead.lineHeight,
     marginTop: theme.space(0.5),
   },
-  previewShimmer: {
+  previewPending: {
     marginTop: theme.space(0.5),
+  },
+  previewPendingBar: {
+    backgroundColor: theme.colors.surface3,
+    borderRadius: theme.radius.sm,
+    height: 12,
+    width: "80%",
   },
 }));

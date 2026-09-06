@@ -3,7 +3,6 @@ import { useState } from "react";
 import { StyleSheet as RNStyleSheet, Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
 
-import { Shimmer } from "@/components/Shimmer";
 import { initialsFromName } from "@/utils/initials";
 
 type Props = {
@@ -17,19 +16,21 @@ type Props = {
 
 /**
  * Circular avatar via expo-image (`memory-disk` cache).
- * Shows shimmer while loading; falls back to initials on error / missing uri.
- * Remounts on uri/recyclingKey change so FlashList reuse cannot stick failed/loading.
+ * Static surface placeholder while loading; initials on error / missing uri.
+ * Resets failed/loading on uri/recyclingKey change without remounting (FlashList recycle).
  */
-export function Avatar(props: Props) {
-  const { uri, recyclingKey } = props;
-  return (
-    <AvatarContent key={`${recyclingKey ?? ""}:${uri ?? ""}`} {...props} />
-  );
-}
-
-function AvatarContent({ name, uri, size = 48, recyclingKey, testID }: Props) {
+export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
+  const identity = `${recyclingKey ?? ""}:${uri ?? ""}`;
+  const [trackedIdentity, setTrackedIdentity] = useState(identity);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(Boolean(uri));
+
+  if (identity !== trackedIdentity) {
+    setTrackedIdentity(identity);
+    setFailed(false);
+    setLoading(Boolean(uri));
+  }
+
   const showImage = Boolean(uri) && !failed;
   const initials = initialsFromName(name);
   const fontSize = Math.max(12, Math.round(size * 0.35));
@@ -51,6 +52,7 @@ function AvatarContent({ name, uri, size = 48, recyclingKey, testID }: Props) {
           cachePolicy="memory-disk"
           contentFit="cover"
           priority="normal"
+          transition={0}
           recyclingKey={recyclingKey ?? null}
           onLoadStart={() => setLoading(true)}
           onLoad={() => setLoading(false)}
@@ -73,9 +75,14 @@ function AvatarContent({ name, uri, size = 48, recyclingKey, testID }: Props) {
         </View>
       )}
       {showImage && loading ? (
-        <View style={RNStyleSheet.absoluteFill} pointerEvents="none">
-          <Shimmer width={size} height={size} borderRadius={size / 2} />
-        </View>
+        <View
+          pointerEvents="none"
+          style={[
+            RNStyleSheet.absoluteFill,
+            styles.loadingFill,
+            { borderRadius: size / 2 },
+          ]}
+        />
       ) : null}
     </View>
   );
@@ -89,6 +96,9 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
     backgroundColor: theme.colors.surface3,
     justifyContent: "center",
+  },
+  loadingFill: {
+    backgroundColor: theme.colors.surface3,
   },
   initials: {
     color: theme.colors.textSecondary,
