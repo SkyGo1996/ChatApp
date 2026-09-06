@@ -61,6 +61,16 @@ describe("applyThemeMode", () => {
     );
   });
 
+  test("system falls back to light bg when OS scheme is unspecified", () => {
+    mockColorScheme("unspecified");
+    applyThemeMode("system");
+    expect(setAdaptiveThemes).toHaveBeenCalledWith(true);
+    expect(setTheme).not.toHaveBeenCalled();
+    expect(setRootViewBackgroundColor).toHaveBeenCalledWith(
+      lightTheme.colors.bg
+    );
+  });
+
   test("light disables adaptive then setTheme('light')", () => {
     applyThemeMode("light");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(false);
@@ -77,6 +87,9 @@ describe("applyThemeMode", () => {
     applyThemeMode("dark");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(false);
     expect(setTheme).toHaveBeenCalledWith("dark");
+    const adaptiveOrder = setAdaptiveThemes.mock.invocationCallOrder[0] ?? 0;
+    const themeOrder = setTheme.mock.invocationCallOrder[0] ?? 0;
+    expect(adaptiveOrder).toBeLessThan(themeOrder);
     expect(setRootViewBackgroundColor).toHaveBeenCalledWith(
       darkTheme.colors.bg
     );

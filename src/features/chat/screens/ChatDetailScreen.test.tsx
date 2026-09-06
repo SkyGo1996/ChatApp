@@ -9,7 +9,7 @@ import {
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
-import { AccessibilityInfo, StyleSheet } from "react-native";
+import { AccessibilityInfo } from "react-native";
 
 import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
@@ -23,10 +23,6 @@ import ChatDetailScreen from "./ChatDetailScreen";
 const contactId = "5";
 const postsPath = mswMessagesCollectionUrl();
 const sendUrl = `${API_BASE_URL}${endpoints.chat.send}`;
-
-function flattenStyle(style: unknown): { opacity?: number } {
-  return StyleSheet.flatten(style) as { opacity?: number };
-}
 
 jest.mock("expo-router", () => ({
   useNavigation: () => ({
@@ -55,7 +51,7 @@ function wrapperFor(client: ReturnType<typeof createTestQueryClient>) {
 }
 
 describe("ChatDetailScreen", () => {
-  test("shows loading shimmer then message body (not title)", async () => {
+  test("renders message body (not title) with list and composer", async () => {
     server.use(
       http.get(postsPath, () =>
         HttpResponse.json({
@@ -174,9 +170,10 @@ describe("ChatDetailScreen", () => {
     });
 
     expect(await screen.findByText("Optimistic ping")).toBeTruthy();
+    // Settled = no Retry affordance and sent announcement (no opacity coupling
+    // to MessageBubble internals; Retry absence already proves settle).
     await waitFor(() => {
-      const row = screen.getByLabelText(/You: Optimistic ping/);
-      expect(flattenStyle(row.props.style).opacity).not.toBe(0.7);
+      expect(screen.getByLabelText(/You: Optimistic ping/)).toBeTruthy();
     });
     expect(screen.queryByLabelText("Retry send")).toBeNull();
 

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 import React from "react";
 import { Text } from "react-native";
 
@@ -25,19 +25,30 @@ function ThrowAfterMount({
 describe("ErrorBoundary", () => {
   test("root boundary shows Retry app fallback and recovers via Retry", async () => {
     const onReset = jest.fn();
-    const { findByLabelText, queryByText } = await render(
+    let shouldThrow = true;
+    function Flaky() {
+      if (shouldThrow) throw new Error("root boom");
+      return <Text>recovered ok</Text>;
+    }
+    const { findByLabelText, queryByText, findByText } = await render(
       <ErrorBoundary onReset={onReset}>
-        <ThrowAfterMount message="root boom" />
+        <Flaky />
       </ErrorBoundary>
     );
     const btn = await findByLabelText("Retry app");
     expect(btn).toBeTruthy();
     // root message surfaces
     expect(queryByText("root boom")).toBeTruthy();
+
+    shouldThrow = false;
+    await fireEvent.press(btn);
+    expect(await findByText("recovered ok")).toBeTruthy();
+    expect(onReset).toHaveBeenCalledTimes(1);
+    expect(queryByText("root boom")).toBeNull();
   });
 
   test("per-screen boundary shows Retry screen and does not bubble to root", async () => {
-    const { findByLabelText, queryByLabelText } = await render(
+    const { findByLabelText, queryByLabelText, findByText } = await render(
       <ErrorBoundary retryAccessibilityLabel="Retry app">
         <ErrorBoundary retryAccessibilityLabel="Retry screen">
           <ThrowAfterMount message="screen boom" />
@@ -49,25 +60,37 @@ describe("ErrorBoundary", () => {
     expect(screenBtn).toBeTruthy();
     expect(queryByLabelText("Retry app")).toBeNull();
     expect(await findByLabelText("Retry screen")).toBeTruthy();
+    // Sibling outside the inner boundary survives (isolation proof).
+    expect(await findByText("outside screen")).toBeTruthy();
   });
 
   test("per-screen Retry resets only inner boundary", async () => {
-    // This checks that Retry on inner boundary does not call outer onReset
+    // Inner crash is recoverable via flag; outer onReset must not fire.
     const outerReset = jest.fn();
+    const innerReset = jest.fn();
+    let innerShouldThrow = true;
     function InnerCrash() {
-      const [crashed] = React.useState(true);
-      if (crashed) throw new Error("inner");
+      if (innerShouldThrow) throw new Error("inner");
       return <Text>inner ok</Text>;
     }
-    // We can't fully simulate state reset without userEvent, but we verify fallback is per-screen
-    const { findByLabelText } = await render(
+    const { findByLabelText, findByText, queryByLabelText } = await render(
       <ErrorBoundary onReset={outerReset} retryAccessibilityLabel="Retry app">
-        <ErrorBoundary retryAccessibilityLabel="Retry screen">
+        <ErrorBoundary
+          onReset={innerReset}
+          retryAccessibilityLabel="Retry screen">
           <InnerCrash />
         </ErrorBoundary>
       </ErrorBoundary>
     );
-    expect(await findByLabelText("Retry screen")).toBeTruthy();
+    const retry = await findByLabelText("Retry screen");
+    expect(retry).toBeTruthy();
     expect(outerReset).not.toHaveBeenCalled();
+
+    innerShouldThrow = false;
+    await fireEvent.press(retry);
+    expect(await findByText("inner ok")).toBeTruthy();
+    expect(innerReset).toHaveBeenCalledTimes(1);
+    expect(outerReset).not.toHaveBeenCalled();
+    expect(queryByLabelText("Retry app")).toBeNull();
   });
 });

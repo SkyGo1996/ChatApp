@@ -34,13 +34,16 @@ function wrapperFor(clientInstance: QueryClient) {
 describe("useConversationPreview", () => {
   test("loads preview via registry URL", async () => {
     let hit = false;
+    let seenLimit: string | null = null;
+    let seenUserId: string | null = null;
+    let seenOffset: string | null = null;
     server.use(
       http.get(postsPath, ({ request }) => {
         hit = true;
         const url = new URL(request.url);
-        expect(url.searchParams.get("limit")).toBe("1");
-        expect(url.searchParams.get("userId")).toBe(String(contactId));
-        expect(url.searchParams.get("offset")).toBe("0");
+        seenLimit = url.searchParams.get("limit");
+        seenUserId = url.searchParams.get("userId");
+        seenOffset = url.searchParams.get("offset");
         return HttpResponse.json({
           total: 1,
           limit: 1,
@@ -68,6 +71,9 @@ describe("useConversationPreview", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(hit).toBe(true);
+    expect(seenLimit).toBe("1");
+    expect(seenUserId).toBe(String(contactId));
+    expect(seenOffset).toBe("0");
     expect(result.current.preview).toEqual({
       text: "Hello from posts",
       createdAt: "2025-07-01T10:12:00Z",

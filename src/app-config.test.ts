@@ -35,8 +35,10 @@ describe("app shell config non-regression", () => {
     expect(appJson.expo.userInterfaceStyle).toBe("automatic");
   });
 
-  test("linking scheme is chatapp", () => {
+  test("linking scheme maps to expected paths (chatapp://) with typedRoutes", () => {
     expect(appJson.expo.scheme).toBe("chatapp");
+    // experiments keep typedRoutes for file-based linking
+    expect(appJson.expo.experiments?.["typedRoutes"]).toBe(true);
   });
 
   test("minimal plugins — expo-router + splash + secure-store only, no OTA/updates", () => {
@@ -76,14 +78,16 @@ describe("app shell config non-regression", () => {
     const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
     expect(allDeps["expo-updates"]).toBeUndefined();
     expect(fs.existsSync(path.join(__dirname, "..", "eas.json"))).toBe(false);
-    // single prod baseURL lives in src/services/api/client.ts per techstack §9 — multi-env not yet wired
-    expect(process.env["EXPO_PUBLIC_API_URL"]).toBeUndefined();
-  });
-
-  test("linking scheme maps to expected paths (chatapp://)", () => {
-    expect(appJson.expo.scheme).toBe("chatapp");
-    // experiments keep typedRoutes for file-based linking
-    expect(appJson.expo.experiments?.["typedRoutes"]).toBe(true);
+    // single prod baseURL lives in src/services/api/client.ts per techstack §9 — multi-env not yet wired.
+    // Guard: E2E CI may set EXPO_PUBLIC_API_URL for a live backend; only fail on
+    // non-URL values. Intentional OTA/multi-env adoption should update this test + decision doc.
+    // See docs/specs or techstack §7 for policy change process.
+    const envUrl = process.env.EXPO_PUBLIC_API_URL;
+    if (envUrl !== undefined) {
+      expect(envUrl).toMatch(/^https?:\/\/.+/);
+    } else {
+      expect(envUrl).toBeUndefined();
+    }
   });
 
   test("no web universal links / intentFilters / associatedDomains leaked in", () => {

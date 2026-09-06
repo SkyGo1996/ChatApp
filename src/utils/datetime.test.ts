@@ -6,14 +6,17 @@ import {
 
 describe("formatConversationTimestamp", () => {
   test("formats today as hh:mm a", () => {
-    const now = new Date();
-    const result = formatConversationTimestamp(now);
+    // Noon today avoids midnight-boundary flake (isToday stable all day).
+    const noon = new Date();
+    noon.setHours(12, 0, 0, 0);
+    const result = formatConversationTimestamp(noon);
     expect(result).toMatch(/^\d{2}:\d{2} (AM|PM)$/);
   });
 
   test("formats yesterday as Yesterday", () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(12, 0, 0, 0);
     expect(formatConversationTimestamp(yesterday)).toBe("Yesterday");
   });
 
@@ -23,9 +26,28 @@ describe("formatConversationTimestamp", () => {
     );
   });
 
+  test("formats tomorrow as MM/dd/yy (future falls through to date)", () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    const expected = `${String(tomorrow.getMonth() + 1).padStart(2, "0")}/${String(
+      tomorrow.getDate()
+    ).padStart(2, "0")}/${String(tomorrow.getFullYear()).slice(-2)}`;
+    expect(formatConversationTimestamp(tomorrow)).toBe(expected);
+  });
+
+  test("accepts epoch numbers", () => {
+    const noon = new Date();
+    noon.setHours(12, 0, 0, 0);
+    expect(formatConversationTimestamp(noon.getTime())).toMatch(
+      /^\d{2}:\d{2} (AM|PM)$/
+    );
+  });
+
   test("accepts ISO strings", () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(12, 0, 0, 0);
     expect(formatConversationTimestamp(yesterday.toISOString())).toBe(
       "Yesterday"
     );
@@ -34,6 +56,7 @@ describe("formatConversationTimestamp", () => {
   test("returns null for invalid dates", () => {
     expect(formatConversationTimestamp("not-a-date")).toBeNull();
     expect(formatConversationTimestamp(Number.NaN)).toBeNull();
+    expect(formatConversationTimestamp(Number.POSITIVE_INFINITY)).toBeNull();
   });
 });
 
@@ -51,12 +74,15 @@ describe("formatMessageTimestamp", () => {
 
 describe("formatDateSeparator", () => {
   test("returns Today for today", () => {
-    expect(formatDateSeparator(new Date())).toBe("Today");
+    const noon = new Date();
+    noon.setHours(12, 0, 0, 0);
+    expect(formatDateSeparator(noon)).toBe("Today");
   });
 
   test("returns Yesterday for yesterday", () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(12, 0, 0, 0);
     expect(formatDateSeparator(yesterday)).toBe("Yesterday");
   });
 

@@ -57,9 +57,6 @@ describe("fetchMessagesPage", () => {
         requested.limit = url.searchParams.get("limit");
         requested.offset = url.searchParams.get("offset");
         requested.userId = url.searchParams.get("userId");
-        expect(
-          endpoints.chat.messages(contactId, { limit: 20, offset: 0 })
-        ).toContain(`userId=${contactId}`);
         const limit = Number(requested.limit ?? 100);
         const offset = Number(requested.offset ?? 0);
         const results = Array.from({ length: limit }, (_, i) =>
@@ -83,6 +80,10 @@ describe("fetchMessagesPage", () => {
     expect(requested.limit).toBe(String(MESSAGES_PAGE_SIZE));
     expect(requested.offset).toBe("0");
     expect(requested.userId).toBe(String(contactId));
+    // Registry contract asserted in test body (not inside MSW handler).
+    expect(
+      endpoints.chat.messages(contactId, { limit: 20, offset: 0 })
+    ).toContain(`userId=${contactId}`);
     expect(page.items).toHaveLength(MESSAGES_PAGE_SIZE);
     expect(page.items[0]).toEqual({
       id: 1,

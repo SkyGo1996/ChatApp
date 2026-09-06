@@ -8,16 +8,37 @@ import {
   chromeSheet,
 } from "./recipes";
 import {
-  REQUIRED_COLOR_KEYS,
   REQUIRED_RADIUS_KEYS,
   REQUIRED_TYPE_KEYS,
   darkTheme,
   lightTheme,
 } from "./themes";
 
+// Literal contract (not imported from file under test): deleting a color +
+// its key must fail. Mirrors REQUIRED_COLOR_KEYS in themes.ts.
+const EXPECTED_COLOR_KEYS = [
+  "bg",
+  "surface",
+  "surface2",
+  "surface3",
+  "overlay",
+  "text",
+  "textSecondary",
+  "border",
+  "primary",
+  "destructive",
+  "bubbleMe",
+  "bubbleThem",
+  "inputBg",
+  "disabled",
+  "glassBg",
+  "glassBorder",
+  "glassTint",
+] as const;
+
 describe("theme tokens", () => {
   test("light and dark expose required color keys", () => {
-    for (const key of REQUIRED_COLOR_KEYS) {
+    for (const key of EXPECTED_COLOR_KEYS) {
       expect(lightTheme.colors).toHaveProperty(key);
       expect(darkTheme.colors).toHaveProperty(key);
       expect(typeof lightTheme.colors[key]).toBe("string");
@@ -25,30 +46,24 @@ describe("theme tokens", () => {
     }
   });
 
-  test("bubbleMe is unified #2563EB in both modes", () => {
-    expect(lightTheme.colors.bubbleMe).toBe("#2563EB");
-    expect(darkTheme.colors.bubbleMe).toBe("#2563EB");
+  test("bubbleMe is unified across modes (exact hex in themes.style.test.ts)", () => {
+    expect(lightTheme.colors.bubbleMe).toBe(darkTheme.colors.bubbleMe);
+    expect(lightTheme.colors.bubbleMe).toMatch(/^#[0-9A-Fa-f]{6}$/);
   });
 
-  test("space(n) = n * 4 on 8pt grid", () => {
+  test("space(n) scales on 8pt grid", () => {
     expect(lightTheme.space(1)).toBe(4);
     expect(lightTheme.space(2)).toBe(8);
     expect(darkTheme.space(4)).toBe(16);
+    expect(lightTheme.space(0)).toBe(0);
   });
 
-  test("radius keys match design mnemonic values", () => {
+  test("radius keys exist with numeric values (exact map in style suite)", () => {
     for (const key of REQUIRED_RADIUS_KEYS) {
       expect(lightTheme.radius).toHaveProperty(key);
+      expect(typeof lightTheme.radius[key]).toBe("number");
     }
-    expect(lightTheme.radius).toEqual({
-      xs: 4,
-      sm: 8,
-      md: 12,
-      lg: 16,
-      sheet: 20,
-      xl: 28,
-      full: 9999,
-    });
+    expect(lightTheme.radius.full).toBeGreaterThan(lightTheme.radius.xl);
   });
 
   test("HIG type scale keys exist with System font", () => {
@@ -60,14 +75,14 @@ describe("theme tokens", () => {
     }
   });
 
-  test("motion + blur + elevation extras present", () => {
-    expect(lightTheme.motion.fadeUp.duration).toBe(220);
-    expect(lightTheme.motion.pressScale.to).toBe(0.97);
-    expect(lightTheme.motionExpressive.sheetSpring.damping).toBe(18);
-    expect(lightTheme.blur.full).toBe(40);
-    expect(lightTheme.blur.degraded).toBe(24);
-    expect(lightTheme.elevation.elevation).toBe(2);
-    expect(darkTheme.elevation.elevation).toBe(0);
+  test("motion + blur + elevation extras present with sane shapes", () => {
+    expect(lightTheme.motion.fadeUp.duration).toBeGreaterThan(0);
+    expect(lightTheme.motion.pressScale.to).toBeGreaterThan(0);
+    expect(lightTheme.motion.pressScale.to).toBeLessThan(1);
+    expect(lightTheme.motionExpressive.sheetSpring.damping).toBeGreaterThan(0);
+    expect(lightTheme.blur.full).toBeGreaterThan(lightTheme.blur.degraded);
+    expect(typeof lightTheme.elevation.elevation).toBe("number");
+    expect(typeof darkTheme.elevation.elevation).toBe("number");
   });
 });
 

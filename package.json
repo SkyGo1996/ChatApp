@@ -72,6 +72,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "jest",
+    "test:ci": "jest --ci",
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"

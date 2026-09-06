@@ -188,6 +188,7 @@ function ConversationsList() {
         ]}
         refreshControl={
           <RefreshControl
+            testID="conversations-refresh"
             refreshing={isRefetching && !isFetchingNextPage}
             onRefresh={onRefresh}
             tintColor={theme.colors.primary}

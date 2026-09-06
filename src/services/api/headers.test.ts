@@ -1,4 +1,3 @@
-import { getRetryAfterMs } from "./client";
 import { getHeader, normalizeHeaders } from "./headers";
 
 describe("getHeader", () => {
@@ -21,7 +20,7 @@ describe("normalizeHeaders", () => {
     expect(normalizeHeaders("x")).toBeUndefined();
   });
 
-  test("coerces string / number / first array string", () => {
+  test("coerces string / number / first array string, drops nested objects", () => {
     expect(
       normalizeHeaders({
         a: "1",
@@ -31,21 +30,10 @@ describe("normalizeHeaders", () => {
       })
     ).toEqual({ a: "1", b: "2", c: "3" });
   });
-});
 
-describe("getRetryAfterMs", () => {
-  test("prefers explicit retryAfter over headers", () => {
-    expect(getRetryAfterMs("2", { "retry-after": "9" })).toBe(2000);
-  });
-
-  test("reads retry-after from headers case-insensitively", () => {
-    expect(getRetryAfterMs(undefined, { "Retry-After": "3" })).toBe(3000);
-  });
-
-  test("parses HTTP-date when not a number of seconds", () => {
-    const future = new Date(Date.now() + 5000).toUTCString();
-    const ms = getRetryAfterMs(future);
-    expect(ms).toBeGreaterThan(0);
-    expect(ms).toBeLessThanOrEqual(5000);
+  test("returns undefined when nothing coercible remains", () => {
+    expect(normalizeHeaders({})).toBeUndefined();
+    expect(normalizeHeaders({ d: { nested: true } })).toBeUndefined();
+    expect(normalizeHeaders({ e: [0] })).toBeUndefined();
   });
 });

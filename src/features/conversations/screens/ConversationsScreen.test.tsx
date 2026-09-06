@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -8,7 +9,8 @@ import {
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
-import type { TestInstance } from "test-renderer";
+
+import { queryKeys } from "@/lib/query-keys";
 
 import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
@@ -111,16 +113,13 @@ describe("ConversationsScreen", () => {
 
     expect(await screen.findByText("User 1")).toBeTruthy();
 
+    // Trigger the same refetch() path as pull-to-refresh (onRefresh → refetch)
+    // via the QueryClient to avoid native RCTRefreshControl host queries.
+    // testID="conversations-refresh" is kept on the control for E2E.
     mode = "fail500";
-    const list = screen.getByTestId("conversations-list");
-    const refreshControl = list.children.find(
-      (child): child is TestInstance =>
-        typeof child !== "string" && child.type === "RCTRefreshControl"
-    );
-    if (!refreshControl) {
-      throw new Error("Expected RCTRefreshControl under conversations-list");
-    }
-    await fireEvent(refreshControl, "refresh");
+    await act(async () => {
+      await qc.refetchQueries({ queryKey: queryKeys.conversations() });
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Something went wrong.")).toBeTruthy();
