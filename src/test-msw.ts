@@ -19,3 +19,11 @@ export function mswMessagesCollectionUrl(): string {
   const path = q >= 0 ? withQuery.slice(0, q) : withQuery;
   return `${API_BASE_URL}${path}`;
 }
+
+/**
+ * Absolute MSW URL for a single profile detail.
+ * Derived from `endpoints.profile.detail` so tests never hardcode `/users/:id`.
+ */
+export function mswProfileDetailUrl(id: string | number): string {
+  return `${API_BASE_URL}${endpoints.profile.detail(id)}`;
+}
