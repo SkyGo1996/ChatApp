@@ -12,11 +12,20 @@ import { darkTheme, type AppTheme } from "./themes";
  * Central seam for Option A — all native headers must derive from this.
  *
  * headerStyle only accepts backgroundColor on native stack (expo-router docs).
- * Do NOT set headerBlurEffect — iOS 26+ scrollEdgeEffects (automatic) handles
- * blur reveal on scroll. Setting blurEffect alongside scrollEdgeEffects causes
- * "[RNScreens] Using both `blurEffect` and `scrollEdgeEffects` simultaneously
- * may cause overlapping effects" and double-blur.
+ *
+ * Transparent chat headers:
+ * - iOS 26+: omit headerBlurEffect — scrollEdgeEffects (automatic) supplies
+ *   Liquid Glass. Setting blurEffect alongside scrollEdgeEffects causes
+ *   "[RNScreens] Using both `blurEffect` and `scrollEdgeEffects` simultaneously
+ *   may cause overlapping effects" and double-blur.
+ * - iOS 18 and earlier: set headerBlurEffect to systemChromeMaterial — without
+ *   it, headerTransparent is a clear overlay (messages show through).
  */
+
+/** Liquid Glass / scrollEdgeEffects exist only on iOS 26+. */
+export function isIOS26OrLater(): boolean {
+  return Platform.OS === "ios" && Number(Platform.Version) >= 26;
+}
 export type ThemedStackOptions = Pick<
   NativeStackNavigationOptions,
   | "headerStyle"
@@ -86,16 +95,18 @@ export function themedStackOptions(
   // For iOS opaque we prefer surface (solid) so dark/light is crisp; chromeHeader
   // on iOS would be semi-transparent glassBg which is indistinct as native header bg.
   // Keep chrome's elevation for shadow visibility.
-  // headerBlurEffect intentionally omitted (undefined) — iOS 26+ scrollEdgeEffects
-  // is automatic; setting blurEffect triggers RNScreens double-blur warning.
   if (transparent && isIOS) {
+    // Pre-26: frosted material. iOS 26+: leave undefined for scrollEdgeEffects.
+    const headerBlurEffect = isIOS26OrLater()
+      ? undefined
+      : ("systemChromeMaterial" as const);
     return {
       headerTransparent: true,
       headerStyle: { backgroundColor: "transparent" },
       headerTintColor: theme.colors.text,
       headerTitleStyle: { color: theme.colors.text },
       headerShadowVisible: false,
-      headerBlurEffect: undefined,
+      headerBlurEffect,
       // Global default: chevron only, no back-title label (iOS; Android
       // back arrow shows no label regardless).
       headerBackButtonDisplayMode: "minimal",
