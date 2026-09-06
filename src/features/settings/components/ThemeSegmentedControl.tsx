@@ -15,8 +15,8 @@ import {
   THEME_MODE_TO_INDEX,
   THEME_VALUES,
   THEME_VALUE_TO_MODE,
-} from "../constants";
-import { useThemeMode } from "../hooks/useThemeMode";
+} from "@/features/settings/constants";
+import { useThemeMode } from "@/features/settings/hooks/useThemeMode";
 
 // Native cross-platform segmented control (iOS: UISegmentedControl via SwiftUI Picker, Android: Material SingleChoiceRow)
 import { SegmentedControl } from "@expo/ui/community/segmented-control";

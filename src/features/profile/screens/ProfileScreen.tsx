@@ -24,7 +24,7 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { Avatar } from "@/components/Avatar";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { Shimmer } from "@/components/Shimmer";
-import { BlockConfirm } from "@/features/profile/components/BlockConfirm";
+import { BlockConfirm } from "@/features/profile/components";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";

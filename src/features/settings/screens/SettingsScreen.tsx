@@ -3,9 +3,8 @@ import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet } from "react-native-unistyles";
 
-import { MeCard } from "../components/MeCard";
-import { ThemeSegmentedControl } from "../components/ThemeSegmentedControl";
-import { APP_VERSION_FALLBACK } from "../constants";
+import { MeCard, ThemeSegmentedControl } from "@/features/settings/components";
+import { APP_VERSION_FALLBACK } from "@/features/settings/constants";
 
 function getAppVersion(): string {
   const fromExpoConfig = (

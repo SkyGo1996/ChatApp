@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native-unistyles";
 
 import { Avatar } from "@/components/Avatar";
 
-import { ME } from "../constants";
+import { ME } from "@/features/settings/constants";
 
 export function MeCard() {
   return (
