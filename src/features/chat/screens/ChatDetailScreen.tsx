@@ -34,7 +34,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
-import { chromeHeader } from "@/theme/recipes";
 import { motion, space } from "@/theme/tokens";
 
 import { MessagesSquare } from "lucide-react-native";
@@ -385,7 +384,6 @@ export default function ChatDetailScreen({
   contactAvatar,
 }: Props) {
   const navigation = useNavigation();
-  const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   const [composerHeight, setComposerHeight] = useState(
@@ -395,7 +393,6 @@ export default function ChatDetailScreen({
     name: contactName,
     avatar: contactAvatar,
   });
-  const chrome = chromeHeader(theme);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -406,31 +403,8 @@ export default function ChatDetailScreen({
           avatar={contact.avatar}
         />
       ),
-      ...(Platform.OS === "ios"
-        ? {
-            // Transparent header; iOS 26+ default scrollEdgeEffects.top
-            // (automatic) reveals blur as content scrolls under — do not
-            // force always-on headerBlurEffect or top: "hidden".
-            headerTransparent: true,
-            headerStyle: { backgroundColor: "transparent" },
-            headerShadowVisible: false,
-          }
-        : {
-            headerTransparent: false,
-            headerStyle: {
-              backgroundColor: chrome.backgroundColor,
-            },
-            headerShadowVisible: chrome.elevation > 0,
-          }),
     });
-  }, [
-    navigation,
-    conversationId,
-    contact.name,
-    contact.avatar,
-    chrome.backgroundColor,
-    chrome.elevation,
-  ]);
+  }, [navigation, conversationId, contact.name, contact.avatar]);
 
   const onComposerHeightChange = useCallback((height: number) => {
     setComposerHeight((prev) => (prev === height ? prev : height));

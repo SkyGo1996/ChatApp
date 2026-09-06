@@ -1,12 +1,15 @@
 import { Stack } from "expo-router";
 
+import { useThemedStackOptions } from "@/theme/navigation";
+
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
 export default function ChatsTabLayout() {
+  const themed = useThemedStackOptions();
   return (
-    <Stack>
+    <Stack screenOptions={themed}>
       <Stack.Screen name="index" options={{ title: "Chats" }} />
     </Stack>
   );

@@ -1,4 +1,9 @@
 export {
+  themedStackOptions,
+  useThemedStackOptions,
+  type ThemedStackOptions,
+} from "./navigation";
+export {
   chromeBar,
   chromeComposer,
   chromeFab,

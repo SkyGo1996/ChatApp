@@ -5,10 +5,12 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useUnistyles } from "react-native-unistyles";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { Toaster } from "sonner-native";
@@ -17,6 +19,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ensurePersistor, store } from "@/store";
 import { getPersistedThemeModeSync, initBlockedStorage } from "@/store/persist";
+import { themedStackOptions } from "@/theme/navigation";
 import { applyThemeMode } from "@/theme/unistyles";
 
 void SplashScreen.preventAutoHideAsync();
@@ -85,6 +88,37 @@ function InnerProviders({ children }: { children: ReactNode }) {
   );
 }
 
+function ThemedRootStack() {
+  const { theme } = useUnistyles();
+  const opaque = useMemo(() => themedStackOptions(theme), [theme]);
+  const transparentChat = useMemo(
+    () => themedStackOptions(theme, { transparent: Platform.OS === "ios" }),
+    [theme]
+  );
+  return (
+    <Stack screenOptions={opaque}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="chats/[id]"
+        options={{
+          title: "Chat",
+          headerBackButtonDisplayMode: "minimal",
+          ...transparentChat,
+        }}
+      />
+      <Stack.Screen
+        name="chats/[id]/profile"
+        options={{
+          title: "Profile",
+          headerBackButtonDisplayMode: "minimal",
+          ...opaque,
+        }}
+      />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const [bootId, setBootId] = useState(0);
 
@@ -108,24 +142,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <KeyboardProvider>
             <InnerProviders>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="chats/[id]"
-                  options={{
-                    title: "Chat",
-                    headerBackButtonDisplayMode: "minimal",
-                  }}
-                />
-                <Stack.Screen
-                  name="chats/[id]/profile"
-                  options={{
-                    title: "Profile",
-                    headerBackButtonDisplayMode: "minimal",
-                  }}
-                />
-                <Stack.Screen name="+not-found" />
-              </Stack>
+              <ThemedRootStack />
             </InnerProviders>
             <Toaster />
           </KeyboardProvider>
