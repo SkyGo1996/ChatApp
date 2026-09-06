@@ -234,6 +234,175 @@ jest.mock("expo-blur", () => {
   return { BlurView };
 });
 
+// 14. @expo/ui — native SwiftUI / Jetpack Compose hosts not available in Jest
+jest.mock("@expo/ui/swift-ui", () => {
+  const React = require("react") as typeof import("react");
+  const {
+    View,
+    Pressable,
+    Text: RNText,
+  } = require("react-native") as typeof import("react-native");
+  type MockAlertProps = {
+    title: string;
+    isPresented?: boolean;
+    children?: React.ReactNode;
+  };
+  function MockAlert({ title, isPresented, children }: MockAlertProps) {
+    if (!isPresented) return null;
+    return React.createElement(
+      View,
+      { testID: "expo-alert", accessibilityLabel: title },
+      children
+    );
+  }
+
+  MockAlert.Trigger = function Trigger({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlert.Actions = function Actions({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlert.Message = function Message({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  const MockButton = ({
+    label,
+    onPress,
+  }: {
+    label: string;
+    onPress?: () => void;
+    role?: string;
+  }) =>
+    React.createElement(
+      Pressable,
+      {
+        onPress,
+        accessibilityRole: "button",
+        accessibilityLabel: label,
+        testID: `expo-button-${label}`,
+      },
+      React.createElement(RNText, null, label)
+    );
+  const MockText = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(RNText, null, children);
+  const MockHost = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(View, null, children);
+  return {
+    Host: MockHost,
+    Alert: MockAlert,
+    Button: MockButton,
+    Text: MockText,
+  };
+});
+
+jest.mock("@expo/ui/jetpack-compose", () => {
+  const React = require("react") as typeof import("react");
+  const {
+    View,
+    Pressable,
+    Text: RNText,
+  } = require("react-native") as typeof import("react-native");
+  type MockDialogProps = {
+    children?: React.ReactNode;
+    onDismissRequest?: () => void;
+  };
+  function MockAlertDialog({ children }: MockDialogProps) {
+    return React.createElement(View, { testID: "expo-alert-dialog" }, children);
+  }
+  MockAlertDialog.Title = function Title({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlertDialog.Text = function TextSlot({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlertDialog.ConfirmButton = function ConfirmButton({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlertDialog.DismissButton = function DismissButton({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  MockAlertDialog.Icon = function Icon({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
+    return React.createElement(View, null, children);
+  };
+  const MockTextButton = ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) =>
+    React.createElement(
+      Pressable,
+      {
+        onPress: onClick,
+        accessibilityRole: "button",
+        testID: "expo-text-button",
+      },
+      children
+    );
+  const MockButton = ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) =>
+    React.createElement(
+      Pressable,
+      {
+        onPress: onClick,
+        accessibilityRole: "button",
+        testID: "expo-compose-button",
+      },
+      children
+    );
+  const MockText = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(RNText, null, children);
+  const MockIcon = () => React.createElement(View, { testID: "expo-icon" });
+  const MockHost = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(View, null, children);
+  return {
+    Host: MockHost,
+    AlertDialog: MockAlertDialog,
+    TextButton: MockTextButton,
+    Button: MockButton,
+    Text: MockText,
+    Icon: MockIcon,
+  };
+});
+
 // RNTL v14 built-in matchers: no need for @testing-library/jest-native/extend-expect
 // Importing from @testing-library/react-native auto-extends expect.
 // Keep explicit import for coverage if pure import is avoided in some tests.

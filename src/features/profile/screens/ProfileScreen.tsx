@@ -6,7 +6,7 @@ import {
 } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import { Ban, Phone } from "lucide-react-native";
+import { Phone } from "lucide-react-native";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Platform,
@@ -24,10 +24,10 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { Avatar } from "@/components/Avatar";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { Shimmer } from "@/components/Shimmer";
+import { BlockConfirm } from "@/features/profile/components/BlockConfirm";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
-import { useBlock } from "@/store/useBlock";
 import { chromeSheet } from "@/theme/recipes";
 import { motion } from "@/theme/tokens";
 
@@ -245,42 +245,7 @@ function BlockSection({
   contactId: string;
   name: string;
 }) {
-  const { theme } = useUnistyles();
-  const { isBlocked, block, unblock } = useBlock(contactId);
-
-  const handlePress = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isBlocked) {
-      unblock();
-    } else {
-      block();
-    }
-  }, [isBlocked, block, unblock]);
-
-  const label = isBlocked ? `Unblock ${name}` : `Block ${name}`;
-  const color = isBlocked ? theme.colors.primary : theme.colors.destructive;
-
-  return (
-    <ProfileWash style={styles.blockCard}>
-      <Pressable
-        onPress={handlePress}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        // Ticket 11 will upgrade to sheet confirmation — direct toggle for now
-        accessibilityHint={
-          isBlocked ? "Unblocks this contact" : "Blocks this contact"
-        }
-        hitSlop={8}
-        style={styles.blockRowPressable}>
-        <View style={styles.blockRow}>
-          <Ban size={20} color={color} />
-          <Text style={[styles.blockText, { color }]} allowFontScaling>
-            {label}
-          </Text>
-        </View>
-      </Pressable>
-    </ProfileWash>
-  );
+  return <BlockConfirm contactId={contactId} name={name} />;
 }
 
 export default function ProfileScreen({ contactId }: Props) {

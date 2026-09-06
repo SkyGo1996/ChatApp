@@ -65,17 +65,39 @@ function sendPressOutAndroid(scale: SharedValue<number>): void {
 function ComposerChrome({
   children,
   style,
+  disabled,
 }: {
   children: ReactNode;
   style: StyleProp<ViewStyle>;
+  disabled?: boolean;
 }) {
   const { theme } = useUnistyles();
   const reduceTransparency = useReduceTransparency();
   const chrome = chromeComposer(theme);
 
+  if (disabled) {
+    // Solid disabled fill — never translucent, respects none of reduceTransparency
+    return (
+      <View
+        testID="composer-chrome"
+        style={[
+          style,
+          {
+            backgroundColor: theme.colors.disabled,
+            borderColor: theme.colors.border,
+            borderWidth: 1,
+            elevation: 0,
+          },
+        ]}>
+        {children}
+      </View>
+    );
+  }
+
   if (Platform.OS === "android") {
     return (
       <View
+        testID="composer-chrome"
         style={[
           style,
           {
@@ -106,6 +128,7 @@ function ComposerChrome({
     return (
       <View style={[styles.glassHost, theme.shadow]}>
         <GlassView
+          testID="composer-chrome"
           style={[style, iosFill]}
           tintColor={theme.colors.glassTint}
           glassEffectStyle="regular">
@@ -119,6 +142,7 @@ function ComposerChrome({
     return (
       <View style={[styles.glassHost, theme.shadow]}>
         <BlurView
+          testID="composer-chrome"
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
           style={[style, iosFill]}>
@@ -130,6 +154,7 @@ function ComposerChrome({
 
   return (
     <View
+      testID="composer-chrome"
       style={[
         style,
         {
@@ -204,8 +229,14 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
       testID="composer"
       onLayout={onWrapLayout}
       style={[styles.wrap, { paddingBottom: bottomPad }]}>
-      <ComposerChrome style={styles.pill}>
-        <View style={[styles.inputWrap, { minHeight: sendSize }]}>
+      <ComposerChrome style={styles.pill} disabled={disabled}>
+        <View
+          testID="composer-input-wrap"
+          style={[
+            styles.inputWrap,
+            { minHeight: sendSize },
+            disabled ? { backgroundColor: theme.colors.disabled } : null,
+          ]}>
           <TextInput
             testID="composer-input"
             nativeID={CHAT_INPUT_NATIVE_ID}
@@ -224,6 +255,7 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
                 lineHeight: scaledLineHeight,
                 maxHeight: maxInputHeight,
               },
+              disabled ? { backgroundColor: theme.colors.disabled } : null,
             ]}
             accessibilityLabel="Message input"
             accessibilityState={{ disabled }}

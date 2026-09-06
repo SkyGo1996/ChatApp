@@ -68,11 +68,17 @@ describe("Composer style contract", () => {
     expect(wrapFlat.minWidth).toBe(0);
   });
 
-  test("disabled input has no disabled fill", async () => {
+  test("disabled input has solid disabled fill", async () => {
     await render(<Composer onSend={jest.fn()} disabled />);
 
     const input = await screen.findByTestId("composer-input");
     const flat = flattenStyle(input.props.style);
-    expect(flat.backgroundColor).toBeUndefined();
+    // Ticket 11: editable={false} + solid disabled fill, never translucent
+    expect(flat.backgroundColor).toBeDefined();
+    expect(flat.backgroundColor).not.toMatch(/rgba/);
+    // chrome and wrap also expose solid fill
+    const chrome = await screen.findByTestId("composer-chrome");
+    const chromeFlat = flattenStyle(chrome.props.style);
+    expect(chromeFlat.backgroundColor).toBeDefined();
   });
 });

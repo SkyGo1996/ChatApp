@@ -17,7 +17,10 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
+  Pressable,
+  Text,
   View,
+  type LayoutChangeEvent,
   type ScrollViewProps,
 } from "react-native";
 import {
@@ -34,7 +37,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getRetryAfterMs, type ApiError } from "@/services/api/client";
+import { useBlock } from "@/store/useBlock";
 import { motion, space } from "@/theme/tokens";
+import * as Haptics from "expo-haptics";
 
 import { MessagesSquare } from "lucide-react-native";
 
@@ -393,6 +398,7 @@ export default function ChatDetailScreen({
     name: contactName,
     avatar: contactAvatar,
   });
+  const { isBlocked, unblock } = useBlock(conversationId);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -409,6 +415,16 @@ export default function ChatDetailScreen({
   const onComposerHeightChange = useCallback((height: number) => {
     setComposerHeight((prev) => (prev === height ? prev : height));
   }, []);
+
+  const onStickyLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    setComposerHeight((prev) => (prev === h ? prev : h));
+  }, []);
+
+  const handleUnblock = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    unblock();
+  }, [unblock]);
 
   const stickyOffset = useMemo(
     () => ({
@@ -443,9 +459,35 @@ export default function ChatDetailScreen({
         onRetrySend={onRetrySend}
       />
       {/* Absolute sticky composer floats over the list; a trailing list
-          spacer reserves space so timestamps/bubbles never sit under the pill. */}
+           spacer reserves space so timestamps/bubbles never sit under the pill. */}
       <KeyboardStickyView offset={stickyOffset} style={styles.composerSticky}>
-        <Composer onSend={onSend} onHeightChange={onComposerHeightChange} />
+        <View onLayout={onStickyLayout} testID="composer-sticky-wrap">
+          {isBlocked ? (
+            <View
+              testID="block-guard"
+              style={styles.blockGuard}
+              accessibilityRole="alert">
+              <Text style={styles.blockGuardText} allowFontScaling>
+                This Contact is blocked
+              </Text>
+              <Pressable
+                onPress={handleUnblock}
+                accessibilityRole="button"
+                accessibilityLabel="Unblock"
+                hitSlop={8}
+                style={styles.blockGuardButton}>
+                <Text style={styles.blockGuardButtonText} allowFontScaling>
+                  Unblock
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <Composer
+            onSend={onSend}
+            disabled={isBlocked}
+            onHeightChange={onComposerHeightChange}
+          />
+        </View>
       </KeyboardStickyView>
     </KeyboardGestureArea>
   );
@@ -488,6 +530,34 @@ const styles = StyleSheet.create((theme) => ({
     position: "absolute",
     right: 0,
     zIndex: 3,
+  },
+  blockGuard: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: theme.space(2),
+    paddingHorizontal: theme.space(3),
+    paddingVertical: theme.space(2),
+    backgroundColor: theme.colors.bg,
+  },
+  blockGuardText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.type.subhead.size,
+    fontWeight: theme.type.subhead.weight,
+    letterSpacing: theme.type.subhead.letterSpacing,
+    lineHeight: theme.type.subhead.lineHeight,
+  },
+  blockGuardButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: theme.space(2),
+  },
+  blockGuardButtonText: {
+    color: theme.colors.primary,
+    fontSize: theme.type.callout.size,
+    fontWeight: "600",
+    letterSpacing: theme.type.callout.letterSpacing,
+    lineHeight: theme.type.callout.lineHeight,
   },
   skeletonOverlay: {
     bottom: 0,

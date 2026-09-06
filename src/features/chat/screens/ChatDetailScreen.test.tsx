@@ -1,20 +1,12 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
-import { type ReactNode } from "react";
 import { AccessibilityInfo } from "react-native";
 
 import { API_BASE_URL } from "@/services/api/client";
 import { endpoints } from "@/services/api/endpoints";
 import { mswMessagesCollectionUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
-import { createTestQueryClient } from "@/test-utils";
+import { createTestQueryClient, renderWithProviders } from "@/test-utils";
 
 import { makePost } from "@/features/chat/test-fixtures";
 
@@ -42,14 +34,6 @@ afterEach(() => {
 });
 afterAll(() => server.close());
 
-function wrapperFor(client: ReturnType<typeof createTestQueryClient>) {
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    );
-  };
-}
-
 describe("ChatDetailScreen", () => {
   test("renders message body (not title) with list and composer", async () => {
     server.use(
@@ -71,13 +55,13 @@ describe("ChatDetailScreen", () => {
     );
 
     const qc = createTestQueryClient();
-    await render(
+    await renderWithProviders(
       <ChatDetailScreen
         conversationId={contactId}
         contactName="Ada"
         contactAvatar="https://i.pravatar.cc/150?img=5"
       />,
-      { wrapper: wrapperFor(qc) }
+      { queryClient: qc }
     );
 
     expect(await screen.findByText("Visible bubble body")).toBeTruthy();
@@ -95,8 +79,8 @@ describe("ChatDetailScreen", () => {
     );
 
     const qc = createTestQueryClient();
-    await render(<ChatDetailScreen conversationId={contactId} />, {
-      wrapper: wrapperFor(qc),
+    await renderWithProviders(<ChatDetailScreen conversationId={contactId} />, {
+      queryClient: qc,
     });
 
     await waitFor(() => {
@@ -148,13 +132,13 @@ describe("ChatDetailScreen", () => {
     );
 
     const qc = createTestQueryClient();
-    await render(
+    await renderWithProviders(
       <ChatDetailScreen
         conversationId={contactId}
         contactName="Ada"
         contactAvatar="https://i.pravatar.cc/150?img=5"
       />,
-      { wrapper: wrapperFor(qc) }
+      { queryClient: qc }
     );
 
     expect(await screen.findByText("Existing history")).toBeTruthy();
