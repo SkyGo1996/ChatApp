@@ -86,9 +86,7 @@ const renderChatItem: ListRenderItem<ChatListItem> = ({ item }) => {
   if (item.type === "separator") {
     return <DateSeparator label={item.label} />;
   }
-  return (
-    <MessageBubble message={item.message} marginTop={item.marginTop} />
-  );
+  return <MessageBubble message={item.message} marginTop={item.marginTop} />;
 };
 
 function keyExtractor(item: ChatListItem): string {

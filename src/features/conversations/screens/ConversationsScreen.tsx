@@ -82,8 +82,7 @@ function ConversationsList() {
   // NativeTabs: Android wraps screens in bottom SafeAreaView. iOS ScrollView
   // gets auto insets, but FlashList does not — clear the floating glass bar
   // plus home-indicator inset so the last row isn't covered.
-  const listBottomPad =
-    Platform.OS === "ios" ? insets.bottom : 0;
+  const listBottomPad = Platform.OS === "ios" ? insets.bottom : 0;
 
   const retryDisabled = useRetryDisabledUntil(error);
 

@@ -16,9 +16,7 @@ import {
 import type { Message } from "@/features/chat/types";
 
 /** `'tail'` loads the newest page; offset+limit load older non-overlapping windows. */
-export type MessagesPageParam =
-  | "tail"
-  | { offset: number; limit: number };
+export type MessagesPageParam = "tail" | { offset: number; limit: number };
 
 /**
  * Older page window that does not overlap the current page when

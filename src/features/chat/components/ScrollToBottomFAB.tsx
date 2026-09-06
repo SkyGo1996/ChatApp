@@ -2,6 +2,7 @@ import { ChevronDown } from "lucide-react-native";
 import { useEffect } from "react";
 import { Platform, Pressable } from "react-native";
 import Animated, {
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -20,7 +21,22 @@ type Props = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const ANDROID_PRESS_SCALE = 0.92;
+const FAB_PRESS_SCALE = 0.92;
+
+/** Module-scope so React Compiler does not treat SharedValue writes as immutable. */
+function fabPressInSpring(scale: SharedValue<number>): void {
+  scale.value = withSpring(FAB_PRESS_SCALE, {
+    damping: motionExpressive.fabSpring.damping,
+    stiffness: motionExpressive.fabSpring.stiffness,
+  });
+}
+
+function fabPressOutSpring(scale: SharedValue<number>): void {
+  scale.value = withSpring(1, {
+    damping: motionExpressive.fabSpring.damping,
+    stiffness: motionExpressive.fabSpring.stiffness,
+  });
+}
 
 /**
  * Floating scroll-to-bottom control.
@@ -52,18 +68,12 @@ export function ScrollToBottomFAB({ visible, onPress }: Props) {
 
   const handlePressIn = () => {
     if (!androidPress || !visible) return;
-    scale.value = withSpring(ANDROID_PRESS_SCALE, {
-      damping: motionExpressive.fabSpring.damping,
-      stiffness: motionExpressive.fabSpring.stiffness,
-    });
+    fabPressInSpring(scale);
   };
 
   const handlePressOut = () => {
     if (!androidPress) return;
-    scale.value = withSpring(1, {
-      damping: motionExpressive.fabSpring.damping,
-      stiffness: motionExpressive.fabSpring.stiffness,
-    });
+    fabPressOutSpring(scale);
   };
 
   const handlePress = () => {
