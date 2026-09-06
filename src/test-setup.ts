@@ -234,6 +234,68 @@ jest.mock("expo-blur", () => {
   return { BlurView };
 });
 
+// 13b. expo-constants — ensure version is defined in Jest (app.json 1.0.0 fallback)
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { version: "1.0.0" },
+    manifest: { version: "1.0.0" },
+  },
+  expoConfig: { version: "1.0.0" },
+}));
+
+// 13c. @expo/ui community segmented-control — Pressable mock with radio semantics
+jest.mock("@expo/ui/community/segmented-control", () => {
+  const React = require("react") as typeof import("react");
+  const {
+    View,
+    Pressable,
+    Text: RNText,
+  } = require("react-native") as typeof import("react-native");
+  function SegmentedControl({
+    values = [],
+    selectedIndex = 0,
+    onValueChange,
+    onChange,
+    testID,
+  }: {
+    values?: string[];
+    selectedIndex?: number;
+    onValueChange?: (v: string) => void;
+    onChange?: (e: {
+      nativeEvent: { selectedSegmentIndex: number; value: string };
+    }) => void;
+    testID?: string;
+  }) {
+    return React.createElement(
+      View,
+      {
+        testID: testID ?? "segmented-control",
+        accessibilityRole: "radiogroup" as const,
+      },
+      (values ?? []).map((v: string, i: number) =>
+        React.createElement(
+          Pressable,
+          {
+            key: v,
+            testID: `segment-${v}`,
+            accessibilityRole: "radio" as const,
+            accessibilityState: { selected: i === selectedIndex },
+            onPress: () => {
+              onValueChange?.(v);
+              onChange?.({
+                nativeEvent: { selectedSegmentIndex: i, value: v },
+              });
+            },
+          },
+          React.createElement(RNText, null, v)
+        )
+      )
+    );
+  }
+  return { SegmentedControl, __esModule: true, default: SegmentedControl };
+});
+
 // 14. @expo/ui — native SwiftUI / Jetpack Compose hosts not available in Jest
 jest.mock("@expo/ui/swift-ui", () => {
   const React = require("react") as typeof import("react");
