@@ -20,27 +20,24 @@ type Props = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const ANDROID_PRESS_SCALE = 0.92;
+
 /**
  * Floating scroll-to-bottom control.
- * Fades in after >200px from bottom; 200ms fade (spring on Android press).
- * Reduce Motion → instant show/hide.
+ * Appear/hide: 200ms opacity fade on both platforms.
+ * Android tap: fabSpring scale (not opacity). Reduce Motion → instant.
  */
 export function ScrollToBottomFAB({ visible, onPress }: Props) {
   const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
   const opacity = useSharedValue(visible ? 1 : 0);
+  const scale = useSharedValue(1);
   const chrome = chromeFab(theme);
+  const androidPress = Platform.OS === "android" && !reduceMotion;
 
   useEffect(() => {
     if (reduceMotion) {
       opacity.value = visible ? 1 : 0;
-      return;
-    }
-    if (Platform.OS === "android") {
-      opacity.value = withSpring(visible ? 1 : 0, {
-        damping: motionExpressive.fabSpring.damping,
-        stiffness: motionExpressive.fabSpring.stiffness,
-      });
       return;
     }
     opacity.value = withTiming(visible ? 1 : 0, {
@@ -50,7 +47,24 @@ export function ScrollToBottomFAB({ visible, onPress }: Props) {
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
+    transform: [{ scale: scale.value }],
   }));
+
+  const handlePressIn = () => {
+    if (!androidPress || !visible) return;
+    scale.value = withSpring(ANDROID_PRESS_SCALE, {
+      damping: motionExpressive.fabSpring.damping,
+      stiffness: motionExpressive.fabSpring.stiffness,
+    });
+  };
+
+  const handlePressOut = () => {
+    if (!androidPress) return;
+    scale.value = withSpring(1, {
+      damping: motionExpressive.fabSpring.damping,
+      stiffness: motionExpressive.fabSpring.stiffness,
+    });
+  };
 
   const handlePress = () => {
     if (!visible) return;
@@ -61,6 +75,8 @@ export function ScrollToBottomFAB({ visible, onPress }: Props) {
     <AnimatedPressable
       testID="scroll-to-bottom-fab"
       onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={!visible}
       pointerEvents={visible ? "auto" : "none"}
       accessibilityRole="button"
