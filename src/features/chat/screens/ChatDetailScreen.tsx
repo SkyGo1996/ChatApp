@@ -246,15 +246,10 @@ export default function ChatDetailScreen({
       ),
       ...(Platform.OS === "ios"
         ? {
+            // Transparent header; iOS 26+ default scrollEdgeEffects.top
+            // (automatic) reveals blur as content scrolls under — do not
+            // force always-on headerBlurEffect or top: "hidden".
             headerTransparent: true,
-            headerBlurEffect: "systemChromeMaterial",
-            // Avoid stacking iOS 26+ automatic scrollEdgeEffects with headerBlurEffect.
-            scrollEdgeEffects: {
-              top: "hidden",
-              bottom: "hidden",
-              left: "hidden",
-              right: "hidden",
-            },
             headerStyle: { backgroundColor: "transparent" },
             headerShadowVisible: false,
           }
