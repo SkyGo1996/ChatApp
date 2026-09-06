@@ -43,20 +43,7 @@ function ProfileWash({
   const chrome = chromeSheet(theme);
 
   if (Platform.OS === "android") {
-    return (
-      <View
-        style={[
-          style,
-          {
-            backgroundColor: chrome.backgroundColor,
-            borderColor: chrome.borderColor,
-            borderWidth: chrome.borderWidth,
-            elevation: chrome.elevation,
-          },
-        ]}>
-        {children}
-      </View>
-    );
+    return <View style={[style, styles.chromeAndroid]}>{children}</View>;
   }
 
   const canGlass =
@@ -65,17 +52,11 @@ function ProfileWash({
     isGlassEffectAPIAvailable();
 
   // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
-  const iosBorder = {
-    borderColor: chrome.borderColor,
-    borderWidth: chrome.borderWidth,
-  };
-  const hostFill = { backgroundColor: chrome.backgroundColor };
-
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, hostFill]}>
+      <View style={[styles.glassHost, styles.hostFill]}>
         <GlassView
-          style={[style, iosBorder]}
+          style={[style, styles.iosBorder]}
           tintColor={theme.colors.glassTint}
           colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
@@ -87,30 +68,18 @@ function ProfileWash({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, hostFill]}>
+      <View style={[styles.glassHost, styles.hostFill]}>
         <BlurView
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
-          style={[style, iosBorder, hostFill, { overflow: "hidden" as const }]}>
+          style={[style, styles.blurFill]}>
           {children}
         </BlurView>
       </View>
     );
   }
 
-  return (
-    <View
-      style={[
-        style,
-        {
-          backgroundColor: chrome.backgroundColor,
-          borderColor: theme.colors.border,
-          borderWidth: 1,
-        },
-      ]}>
-      {children}
-    </View>
-  );
+  return <View style={[style, styles.chromeSolid]}>{children}</View>;
 }
 
 export function BlockConfirm({ contactId, name }: Props) {
@@ -120,6 +89,7 @@ export function BlockConfirm({ contactId, name }: Props) {
 
   const title = `Block ${name}?`;
   const label = isBlocked ? `Unblock ${name}` : `Block ${name}`;
+  styles.useVariants({ blocked: isBlocked });
   const color = isBlocked ? theme.colors.primary : theme.colors.destructive;
 
   const handlePress = useCallback(() => {
@@ -210,7 +180,7 @@ export function BlockConfirm({ contactId, name }: Props) {
           style={styles.blockRowPressable}>
           <View style={styles.blockRow}>
             <Ban size={20} color={color} />
-            <Text style={[styles.blockText, { color }]} allowFontScaling>
+            <Text style={styles.blockText} allowFontScaling>
               {label}
             </Text>
           </View>
@@ -222,36 +192,73 @@ export function BlockConfirm({ contactId, name }: Props) {
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
-  glassHost: {
-    borderRadius: theme.radius.lg,
-  },
-  blockCard: {
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: theme.space(4),
-    paddingVertical: theme.space(2),
-    width: "100%",
-  },
-  blockRowPressable: {
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  blockRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: theme.space(3),
-    minHeight: 44,
-  },
-  blockText: {
-    fontSize: theme.type.body.size,
-    fontWeight: "600",
-    letterSpacing: theme.type.body.letterSpacing,
-    lineHeight: theme.type.body.lineHeight,
-  },
-  hostHidden: {
-    position: "absolute",
-    height: 0,
-    width: 0,
-    opacity: 0,
-  },
-}));
+const styles = StyleSheet.create((theme) => {
+  const chrome = chromeSheet(theme);
+  return {
+    glassHost: {
+      borderRadius: theme.radius.lg,
+    },
+    hostFill: {
+      backgroundColor: chrome.backgroundColor,
+    },
+    iosBorder: {
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+    },
+    blurFill: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+      overflow: "hidden" as const,
+    },
+    chromeAndroid: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+      elevation: chrome.elevation,
+    },
+    chromeSolid: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+    },
+    blockCard: {
+      borderRadius: theme.radius.lg,
+      paddingHorizontal: theme.space(4),
+      paddingVertical: theme.space(2),
+      width: "100%",
+    },
+    blockRowPressable: {
+      minHeight: 44,
+      justifyContent: "center",
+    },
+    blockRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: theme.space(3),
+      minHeight: 44,
+    },
+    blockText: {
+      fontSize: theme.type.body.size,
+      fontWeight: "600",
+      letterSpacing: theme.type.body.letterSpacing,
+      lineHeight: theme.type.body.lineHeight,
+      variants: {
+        blocked: {
+          true: {
+            color: theme.colors.primary,
+          },
+          false: {
+            color: theme.colors.destructive,
+          },
+        },
+      },
+    },
+    hostHidden: {
+      position: "absolute",
+      height: 0,
+      width: 0,
+      opacity: 0,
+    },
+  };
+});

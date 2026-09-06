@@ -50,7 +50,6 @@ export function ScrollToBottomFAB({ visible, onPress, bottomOffset }: Props) {
   const reduceMotion = useReduceMotion();
   const opacity = useSharedValue(visible ? 1 : 0);
   const scale = useSharedValue(1);
-  const chrome = chromeFab(theme);
   const androidPress = Platform.OS === "android" && !reduceMotion;
   const bottom = bottomOffset ?? theme.space(6);
 
@@ -95,31 +94,29 @@ export function ScrollToBottomFAB({ visible, onPress, bottomOffset }: Props) {
       accessibilityRole="button"
       accessibilityLabel="Scroll to bottom"
       accessibilityState={{ disabled: !visible }}
-      style={[
-        styles.fab,
-        {
-          backgroundColor: chrome.backgroundColor,
-          borderColor: chrome.borderColor,
-          borderWidth: chrome.borderWidth,
-          elevation: chrome.elevation,
-          bottom,
-        },
-        animatedStyle,
-      ]}>
+      style={[styles.fab(bottom), animatedStyle]}>
       <ChevronDown size={24} color={theme.colors.text} strokeWidth={2} />
     </AnimatedPressable>
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
-  fab: {
-    alignItems: "center",
-    borderRadius: theme.radius.full,
-    height: 48,
-    justifyContent: "center",
-    position: "absolute",
-    right: theme.space(4),
-    width: 48,
-    zIndex: 2,
-  },
-}));
+const styles = StyleSheet.create((theme) => {
+  const chrome = chromeFab(theme);
+  return {
+    fab: (bottom: number) => ({
+      alignItems: "center",
+      backgroundColor: chrome.backgroundColor,
+      borderColor: chrome.borderColor,
+      borderRadius: theme.radius.full,
+      borderWidth: chrome.borderWidth,
+      bottom,
+      elevation: chrome.elevation,
+      height: 48,
+      justifyContent: "center",
+      position: "absolute",
+      right: theme.space(4),
+      width: 48,
+      zIndex: 2,
+    }),
+  };
+});

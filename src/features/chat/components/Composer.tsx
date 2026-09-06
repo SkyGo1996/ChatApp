@@ -78,17 +78,7 @@ function ComposerChrome({
   if (disabled) {
     // Solid disabled fill — never translucent, respects none of reduceTransparency
     return (
-      <View
-        testID="composer-chrome"
-        style={[
-          style,
-          {
-            backgroundColor: theme.colors.disabled,
-            borderColor: theme.colors.border,
-            borderWidth: 1,
-            elevation: 0,
-          },
-        ]}>
+      <View testID="composer-chrome" style={[style, styles.chromeDisabled]}>
         {children}
       </View>
     );
@@ -96,17 +86,7 @@ function ComposerChrome({
 
   if (Platform.OS === "android") {
     return (
-      <View
-        testID="composer-chrome"
-        style={[
-          style,
-          {
-            backgroundColor: chrome.backgroundColor,
-            borderColor: chrome.borderColor,
-            borderWidth: chrome.borderWidth,
-            elevation: chrome.elevation,
-          },
-        ]}>
+      <View testID="composer-chrome" style={[style, styles.chromeAndroid]}>
         {children}
       </View>
     );
@@ -120,18 +100,12 @@ function ComposerChrome({
   // Host fill covers the native empty-UIVisualEffect dark frame before glass
   // installs. Do not put opaque backgroundColor on GlassView itself — that
   // hides the material. BlurView keeps fill+clip on the effect view.
-  const iosBorder = {
-    borderColor: chrome.borderColor,
-    borderWidth: chrome.borderWidth,
-  };
-  const hostFill = { backgroundColor: chrome.backgroundColor };
-
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow, hostFill]}>
+      <View style={[styles.glassHost, theme.shadow, styles.hostFill]}>
         <GlassView
           testID="composer-chrome"
-          style={[style, iosBorder]}
+          style={[style, styles.iosBorder]}
           tintColor={theme.colors.glassTint}
           colorScheme={glassColorScheme(theme)}
           glassEffectStyle="regular">
@@ -143,12 +117,12 @@ function ComposerChrome({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow, hostFill]}>
+      <View style={[styles.glassHost, theme.shadow, styles.hostFill]}>
         <BlurView
           testID="composer-chrome"
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"
-          style={[style, iosBorder, hostFill, { overflow: "hidden" as const }]}>
+          style={[style, styles.blurFill]}>
           {children}
         </BlurView>
       </View>
@@ -156,16 +130,7 @@ function ComposerChrome({
   }
 
   return (
-    <View
-      testID="composer-chrome"
-      style={[
-        style,
-        {
-          backgroundColor: chrome.backgroundColor,
-          borderColor: theme.colors.border,
-          borderWidth: 1,
-        },
-      ]}>
+    <View testID="composer-chrome" style={[style, styles.chromeSolid]}>
       {children}
     </View>
   );
@@ -231,14 +196,13 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
     <View
       testID="composer"
       onLayout={onWrapLayout}
-      style={[styles.wrap, { paddingBottom: bottomPad }]}>
+      style={styles.wrap(bottomPad)}>
       <ComposerChrome style={styles.pill} disabled={disabled}>
         <View
           testID="composer-input-wrap"
           style={[
-            styles.inputWrap,
-            { minHeight: sendSize },
-            disabled ? { backgroundColor: theme.colors.disabled } : null,
+            styles.inputWrap(sendSize),
+            disabled ? styles.inputWrapDisabled : null,
           ]}>
           <TextInput
             // Remount on unblock so Android EditText remeasures after
@@ -254,19 +218,7 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
             multiline
             editable={!disabled}
             maxLength={MESSAGE_MAX_LENGTH}
-            style={[
-              styles.input,
-              {
-                color: theme.colors.text,
-                maxHeight: maxInputHeight,
-                minHeight: scaledLineHeight,
-                // Android: lineHeight on TextInput maps to setLineSpacing and
-                // clips the caret after editable toggles; keep it iOS-only.
-                ...(Platform.OS === "ios"
-                  ? { lineHeight: scaledLineHeight }
-                  : null),
-              },
-            ]}
+            style={styles.input(scaledLineHeight, maxInputHeight)}
             accessibilityLabel="Message input"
             accessibilityState={{ disabled }}
           />
@@ -280,18 +232,8 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Send"
           accessibilityState={{ disabled: !canSend }}
-          style={[
-            styles.send,
-            {
-              width: sendSize,
-              height: sendSize,
-              opacity: canSend ? 1 : 0.4,
-            },
-            animatedSendStyle,
-          ]}>
-          <Text
-            style={[styles.sendLabel, { color: theme.colors.primary }]}
-            allowFontScaling={false}>
+          style={[styles.send(sendSize, canSend), animatedSendStyle]}>
+          <Text style={styles.sendLabel} allowFontScaling={false}>
             Send
           </Text>
         </AnimatedPressable>
@@ -300,51 +242,99 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
-  wrap: {
-    paddingHorizontal: theme.space(3),
-    paddingTop: theme.space(2),
-  },
-  glassHost: {
-    borderRadius: theme.radius.sheet,
-  },
-  pill: {
-    alignItems: "flex-end",
-    borderRadius: theme.radius.sheet,
-    flexDirection: "row",
-    gap: theme.space(2),
-    minHeight: 48,
-    paddingHorizontal: theme.space(3),
-    paddingVertical: theme.space(2),
-  },
-  inputWrap: {
-    flex: 1,
-    justifyContent: "center",
-    minWidth: 0,
-  },
-  input: {
-    fontSize: theme.type.body.size,
-    fontWeight: theme.type.body.weight,
-    // Android caret is taller than the glyph; false + zero padding clips it
-    // after block/unblock style updates. iOS ignores includeFontPadding.
-    includeFontPadding: Platform.OS === "android",
-    letterSpacing: theme.type.body.letterSpacing,
-    margin: 0,
-    paddingHorizontal: 0,
-    paddingTop: Platform.OS === "android" ? 2 : 0,
-    paddingBottom: Platform.OS === "android" ? 2 : 0,
-    // multiline + center is unstable on Android after remasure; top is safer.
-    textAlignVertical: Platform.OS === "android" ? "top" : "center",
-  },
-  send: {
-    alignItems: "center",
-    borderRadius: theme.radius.full,
-    justifyContent: "center",
-  },
-  sendLabel: {
-    fontSize: theme.type.headline.size,
-    fontWeight: theme.type.headline.weight,
-    letterSpacing: theme.type.headline.letterSpacing,
-    lineHeight: theme.type.headline.lineHeight,
-  },
-}));
+const styles = StyleSheet.create((theme) => {
+  const chrome = chromeComposer(theme);
+  return {
+    wrap: (paddingBottom: number) => ({
+      paddingBottom,
+      paddingHorizontal: theme.space(3),
+      paddingTop: theme.space(2),
+    }),
+    glassHost: {
+      borderRadius: theme.radius.sheet,
+    },
+    hostFill: {
+      backgroundColor: chrome.backgroundColor,
+    },
+    iosBorder: {
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+    },
+    blurFill: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+      overflow: "hidden" as const,
+    },
+    chromeDisabled: {
+      backgroundColor: theme.colors.disabled,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      elevation: 0,
+    },
+    chromeAndroid: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: chrome.borderColor,
+      borderWidth: chrome.borderWidth,
+      elevation: chrome.elevation,
+    },
+    chromeSolid: {
+      backgroundColor: chrome.backgroundColor,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+    },
+    pill: {
+      alignItems: "flex-end",
+      borderRadius: theme.radius.sheet,
+      flexDirection: "row",
+      gap: theme.space(2),
+      minHeight: 48,
+      paddingHorizontal: theme.space(3),
+      paddingVertical: theme.space(2),
+    },
+    inputWrap: (minHeight: number) => ({
+      flex: 1,
+      justifyContent: "center",
+      minHeight,
+      minWidth: 0,
+    }),
+    inputWrapDisabled: {
+      backgroundColor: theme.colors.disabled,
+    },
+    input: (minHeight: number, maxHeight: number) => ({
+      color: theme.colors.text,
+      fontSize: theme.type.body.size,
+      fontWeight: theme.type.body.weight,
+      // Android caret is taller than the glyph; false + zero padding clips it
+      // after block/unblock style updates. iOS ignores includeFontPadding.
+      includeFontPadding: Platform.OS === "android",
+      letterSpacing: theme.type.body.letterSpacing,
+      margin: 0,
+      maxHeight,
+      minHeight,
+      paddingHorizontal: 0,
+      paddingTop: Platform.OS === "android" ? 2 : 0,
+      paddingBottom: Platform.OS === "android" ? 2 : 0,
+      // multiline + center is unstable on Android after remasure; top is safer.
+      textAlignVertical: Platform.OS === "android" ? "top" : "center",
+      // Android: lineHeight on TextInput maps to setLineSpacing and
+      // clips the caret after editable toggles; keep it iOS-only.
+      ...(Platform.OS === "ios" ? { lineHeight: minHeight } : null),
+    }),
+    send: (size: number, canSend: boolean) => ({
+      alignItems: "center",
+      borderRadius: theme.radius.full,
+      height: size,
+      justifyContent: "center",
+      opacity: canSend ? 1 : 0.4,
+      width: size,
+    }),
+    sendLabel: {
+      color: theme.colors.primary,
+      fontSize: theme.type.headline.size,
+      fontWeight: theme.type.headline.weight,
+      letterSpacing: theme.type.headline.letterSpacing,
+      lineHeight: theme.type.headline.lineHeight,
+    },
+  };
+});

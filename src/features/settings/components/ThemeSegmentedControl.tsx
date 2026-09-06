@@ -42,14 +42,7 @@ export function ThemeSegmentedControl() {
   if (Platform.OS === "android") {
     return (
       <View
-        style={[
-          styles.pillAndroid,
-          {
-            backgroundColor: theme.colors.surface2,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.full,
-          },
-        ]}
+        style={styles.pillAndroid}
         accessibilityLabel="Theme selector"
         testID="theme-segment-android-wrap">
         <SegmentedControl
@@ -71,24 +64,13 @@ export function ThemeSegmentedControl() {
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
-  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
-  const iosBorder = {
-    borderColor: theme.colors.glassBorder,
-    borderWidth: 0.5,
-    borderRadius: theme.radius.full,
-  };
-  const hostFill = {
-    backgroundColor: theme.colors.glassBg,
-    borderRadius: theme.radius.full,
-  };
-
   if (canGlass) {
     return (
       <View
-        style={[styles.glassHost, theme.shadow, hostFill]}
+        style={[styles.glassHost, theme.shadow]}
         testID="theme-segment-ios-glass-host">
         <GlassView
-          style={[styles.pillIOS, iosBorder]}
+          style={[styles.pillIOS, styles.iosBorder]}
           tintColor={theme.colors.glassTint}
           colorScheme={appearance}
           glassEffectStyle="regular">
@@ -109,17 +91,12 @@ export function ThemeSegmentedControl() {
   if (!reduceTransparency) {
     return (
       <View
-        style={[styles.glassHost, theme.shadow, hostFill]}
+        style={[styles.glassHost, theme.shadow]}
         testID="theme-segment-ios-blur-host">
         <BlurView
           intensity={theme.blur.full}
           tint="default"
-          style={[
-            styles.pillIOS,
-            iosBorder,
-            hostFill,
-            { overflow: "hidden" as const },
-          ]}>
+          style={[styles.pillIOS, styles.blurFill]}>
           <SegmentedControl
             values={[...THEME_VALUES]}
             selectedIndex={selectedIndex}
@@ -136,17 +113,7 @@ export function ThemeSegmentedControl() {
 
   // Reduce Transparency fallback — solid tonal (no glass, no blur)
   return (
-    <View
-      style={[
-        styles.pillIOS,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          borderWidth: 1,
-          borderRadius: theme.radius.full,
-        },
-      ]}
-      testID="theme-segment-ios-solid-wrap">
+    <View style={styles.pillIOSSolid} testID="theme-segment-ios-solid-wrap">
       <SegmentedControl
         values={[...THEME_VALUES]}
         selectedIndex={selectedIndex}
@@ -162,19 +129,44 @@ export function ThemeSegmentedControl() {
 
 const styles = StyleSheet.create((theme) => ({
   pillAndroid: {
+    backgroundColor: theme.colors.surface2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.full,
     borderWidth: 1,
     elevation: 2,
-    minHeight: 44,
     justifyContent: "center",
+    minHeight: 44,
     padding: 2,
   },
   pillIOS: {
-    minHeight: 44,
     justifyContent: "center",
+    minHeight: 44,
+    padding: 2,
+  },
+  pillIOSSolid: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.full,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
     padding: 2,
   },
   glassHost: {
+    backgroundColor: theme.colors.glassBg,
     borderRadius: theme.radius.full,
+  },
+  iosBorder: {
+    borderColor: theme.colors.glassBorder,
+    borderRadius: theme.radius.full,
+    borderWidth: 0.5,
+  },
+  blurFill: {
+    backgroundColor: theme.colors.glassBg,
+    borderColor: theme.colors.glassBorder,
+    borderRadius: theme.radius.full,
+    borderWidth: 0.5,
+    overflow: "hidden",
   },
   segment: {
     flex: 1,

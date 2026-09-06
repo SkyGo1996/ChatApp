@@ -356,21 +356,14 @@ function MessagesList({
           startRenderingFromBottom: true,
         }}
         renderScrollComponent={renderScrollComponent}
-        style={{ backgroundColor: theme.colors.bg }}
+        style={styles.list}
       />
       {showSkeleton ? (
         <Animated.View
           pointerEvents="none"
           entering={reduceMotion ? FadeIn.duration(0) : FadeIn.duration(150)}
           exiting={reduceMotion ? FadeOut.duration(0) : FadeOut.duration(200)}
-          style={[
-            styles.skeletonOverlay,
-            {
-              backgroundColor: theme.colors.bg,
-              paddingBottom: composerClearance,
-              paddingTop: headerClearance,
-            },
-          ]}>
+          style={styles.skeletonOverlay(composerClearance, headerClearance)}>
           <MessageShimmer variant="page" />
         </Animated.View>
       ) : null}
@@ -520,6 +513,9 @@ const styles = StyleSheet.create((theme) => ({
   listWrap: {
     flex: 1,
   },
+  list: {
+    backgroundColor: theme.colors.bg,
+  },
   emptyWrap: {
     alignItems: "center",
     flex: 1,
@@ -560,12 +556,15 @@ const styles = StyleSheet.create((theme) => ({
     letterSpacing: theme.type.callout.letterSpacing,
     lineHeight: theme.type.callout.lineHeight,
   },
-  skeletonOverlay: {
+  skeletonOverlay: (paddingBottom: number, paddingTop: number) => ({
+    backgroundColor: theme.colors.bg,
     bottom: 0,
     left: 0,
+    paddingBottom,
+    paddingTop,
     position: "absolute",
     right: 0,
     top: 0,
     zIndex: 2,
-  },
+  }),
 }));

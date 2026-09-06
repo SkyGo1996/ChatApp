@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useState } from "react";
-import { StyleSheet as RNStyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
 
 import { initialsFromName } from "@/utils/initials";
@@ -40,15 +40,12 @@ export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
   return (
     <View
       testID={testID}
-      style={[
-        styles.container,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
+      style={styles.sized(size)}
       accessibilityIgnoresInvertColors>
       {showImage ? (
         <Image
           source={{ uri: uri as string }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
+          style={styles.image(size)}
           cachePolicy="memory-disk"
           contentFit="cover"
           priority="normal"
@@ -64,24 +61,15 @@ export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
         />
       ) : (
         <View
-          style={[
-            styles.fallback,
-            { width: size, height: size, borderRadius: size / 2 },
-          ]}
+          style={styles.fallback(size)}
           accessibilityLabel={`${name} avatar`}>
-          <Text style={[styles.initials, { fontSize, lineHeight }]}>
-            {initials}
-          </Text>
+          <Text style={styles.initials(fontSize, lineHeight)}>{initials}</Text>
         </View>
       )}
       {showImage && loading ? (
         <View
           pointerEvents="none"
-          style={[
-            RNStyleSheet.absoluteFill,
-            styles.loadingFill,
-            { borderRadius: size / 2 },
-          ]}
+          style={[StyleSheet.absoluteFill, styles.loadingFill(size)]}
         />
       ) : null}
     </View>
@@ -89,19 +77,33 @@ export function Avatar({ name, uri, size = 48, recyclingKey, testID }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  container: {
+  sized: (size: number) => ({
+    borderRadius: size / 2,
+    height: size,
     overflow: "hidden",
-  },
-  fallback: {
+    width: size,
+  }),
+  image: (size: number) => ({
+    borderRadius: size / 2,
+    height: size,
+    width: size,
+  }),
+  fallback: (size: number) => ({
     alignItems: "center",
     backgroundColor: theme.colors.surface3,
+    borderRadius: size / 2,
+    height: size,
     justifyContent: "center",
-  },
-  loadingFill: {
+    width: size,
+  }),
+  loadingFill: (size: number) => ({
     backgroundColor: theme.colors.surface3,
-  },
-  initials: {
+    borderRadius: size / 2,
+  }),
+  initials: (fontSize: number, lineHeight: number) => ({
     color: theme.colors.textSecondary,
+    fontSize,
     fontWeight: "600",
-  },
+    lineHeight,
+  }),
 }));
