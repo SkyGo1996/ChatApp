@@ -241,6 +241,9 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
             disabled ? { backgroundColor: theme.colors.disabled } : null,
           ]}>
           <TextInput
+            // Remount on unblock so Android EditText remeasures after
+            // editable/layout flips (avoids half caret + clipped glyphs).
+            key={disabled ? "composer-blocked" : "composer-open"}
             testID="composer-input"
             nativeID={CHAT_INPUT_NATIVE_ID}
             value={draft}
@@ -255,10 +258,14 @@ export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
               styles.input,
               {
                 color: theme.colors.text,
-                lineHeight: scaledLineHeight,
                 maxHeight: maxInputHeight,
+                minHeight: scaledLineHeight,
+                // Android: lineHeight on TextInput maps to setLineSpacing and
+                // clips the caret after editable toggles; keep it iOS-only.
+                ...(Platform.OS === "ios"
+                  ? { lineHeight: scaledLineHeight }
+                  : null),
               },
-              disabled ? { backgroundColor: theme.colors.disabled } : null,
             ]}
             accessibilityLabel="Message input"
             accessibilityState={{ disabled }}
@@ -318,12 +325,16 @@ const styles = StyleSheet.create((theme) => ({
   input: {
     fontSize: theme.type.body.size,
     fontWeight: theme.type.body.weight,
-    includeFontPadding: false,
+    // Android caret is taller than the glyph; false + zero padding clips it
+    // after block/unblock style updates. iOS ignores includeFontPadding.
+    includeFontPadding: Platform.OS === "android",
     letterSpacing: theme.type.body.letterSpacing,
     margin: 0,
     paddingHorizontal: 0,
-    paddingVertical: 0,
-    textAlignVertical: "center",
+    paddingTop: Platform.OS === "android" ? 2 : 0,
+    paddingBottom: Platform.OS === "android" ? 2 : 0,
+    // multiline + center is unstable on Android after remasure; top is safer.
+    textAlignVertical: Platform.OS === "android" ? "top" : "center",
   },
   send: {
     alignItems: "center",

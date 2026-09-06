@@ -98,4 +98,19 @@ describe("Composer", () => {
     await fireEvent.press(screen.getByLabelText("Send"));
     expect(onSend).not.toHaveBeenCalled();
   });
+
+  test("preserves draft across unblock remount", async () => {
+    const { rerender } = await render(
+      <Composer onSend={jest.fn()} disabled={false} />
+    );
+    const input = await screen.findByTestId("composer-input");
+    await fireEvent.changeText(input, "keep me");
+
+    await rerender(<Composer onSend={jest.fn()} disabled />);
+    await rerender(<Composer onSend={jest.fn()} disabled={false} />);
+
+    expect((await screen.findByTestId("composer-input")).props.value).toBe(
+      "keep me"
+    );
+  });
 });
