@@ -15,6 +15,8 @@ import {
 } from "@/features/chat/api/fetchMessagesPage";
 import type { Message } from "@/features/chat/types";
 
+import { preserveOutgoingOnTail } from "./outgoingCache";
+
 /** `'tail'` loads the newest page; offset+limit load older non-overlapping windows. */
 export type MessagesPageParam = "tail" | { offset: number; limit: number };
 
@@ -41,9 +43,13 @@ export function messagesInfiniteOptions(conversationId: string | number) {
     MessagesPageParam
   >({
     queryKey: queryKeys.messages(conversationId),
-    queryFn: ({ pageParam }) => {
+    queryFn: async ({ pageParam, client, queryKey }) => {
       if (pageParam === "tail") {
-        return fetchNewestMessagesPage(conversationId);
+        // Mock POST is not in subsequent GETs — keep local `me` rows on refetch.
+        const previous =
+          client.getQueryData<MessagesInfiniteData>(queryKey);
+        const page = await fetchNewestMessagesPage(conversationId);
+        return preserveOutgoingOnTail(previous, page);
       }
       return fetchMessagesPage(conversationId, {
         limit: pageParam.limit,
