@@ -17,6 +17,9 @@ import { sanitizeBlockedState, sanitizeThemeState } from "./persist-recovery";
 import blockedReducer, { type BlockedState } from "./slices/blockedSlice";
 import themeReducer, { type ThemeState } from "./slices/themeSlice";
 
+/** Shared redux-persist version for Blocked + Theme slices (bump on shape change). */
+export const PERSIST_VERSION = 1;
+
 function withPersistMeta<T extends object>(
   state: PersistedState,
   sanitized: T
@@ -30,7 +33,7 @@ function withPersistMeta<T extends object>(
 const blockedPersistConfig: PersistConfig<BlockedState> = {
   key: "blocked",
   storage: blockedStorage,
-  version: 1,
+  version: PERSIST_VERSION,
   migrate: (state) =>
     Promise.resolve(withPersistMeta(state, sanitizeBlockedState(state))),
 };
@@ -38,10 +41,26 @@ const blockedPersistConfig: PersistConfig<BlockedState> = {
 const themePersistConfig: PersistConfig<ThemeState> = {
   key: "theme",
   storage: themeStorage,
-  version: 1,
+  version: PERSIST_VERSION,
   migrate: (state) =>
     Promise.resolve(withPersistMeta(state, sanitizeThemeState(state))),
 };
+
+/** Test seam: blocked persist config with injectable storage (not the app singleton). */
+export function createBlockedPersistConfig(
+  storage: PersistConfig<BlockedState>["storage"]
+): PersistConfig<BlockedState> {
+  return {
+    key: "blocked",
+    storage,
+    version: PERSIST_VERSION,
+    // redux-persist's default 5s rehydrate watchdog is never cleared and
+    // leaks a timer in Jest (`timeout && setTimeout(...)` in persistReducer).
+    timeout: 0,
+    migrate: (state) =>
+      Promise.resolve(withPersistMeta(state, sanitizeBlockedState(state))),
+  };
+}
 
 const rootReducer = combineReducers({
   blocked: persistReducer(blockedPersistConfig, blockedReducer),

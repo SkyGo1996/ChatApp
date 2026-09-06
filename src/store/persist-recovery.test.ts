@@ -54,6 +54,16 @@ describe("sanitizeBlockedState", () => {
       blockedIds: {},
     });
   });
+
+  test("persist-shaped input with _persist + unknown keys strips extras", () => {
+    expect(
+      sanitizeBlockedState({
+        blockedIds: { "10": true, "11": false },
+        _persist: { version: 1, rehydrated: true },
+        leaked: "nope",
+      })
+    ).toEqual({ blockedIds: { "10": true } });
+  });
 });
 
 describe("parsePersistedThemeMode", () => {

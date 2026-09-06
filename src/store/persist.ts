@@ -9,6 +9,10 @@ import { parsePersistedThemeMode, type ThemeMode } from "./persist-recovery";
 // Re-export ThemeMode for callers that imported from persist path historically
 export type { ThemeMode };
 
+export const MMKV_KEY_SECURE_STORE = "mmkv-key";
+/** AES-256 requires exactly 32 bytes (UTF-8 / ASCII length). */
+export const MMKV_AES256_KEY_BYTES = 32;
+
 // ---------------------------------------------------------------------------
 // MMKV instances
 // Blocked (encrypted) + Theme (plain) per techstack.md:51 / §7
@@ -30,32 +34,89 @@ function getBlockedMMKV(): MMKV {
   return blockedMMKV;
 }
 
-// Async initializer for encrypted blocked storage. Called during boot before
-// persist hydration. If SecureStore is available, re-creates MMKV with key.
+/** Printable ASCII alphabet (64 chars) — one byte → one char, key length === byte count. */
+const ASCII_KEY_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+ * Map cryptographically random bytes to a fixed-length ASCII key.
+ * MMKV AES-256 requires the encryptionKey string to be exactly 32 bytes UTF-8.
+ */
+export function bytesToAsciiKey(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => ASCII_KEY_ALPHABET[b % 64]!).join("");
+}
+
+/** Valid AES-256 MMKV key: exactly 32 ASCII (single-byte) characters. */
+export function isValidAes256Key(key: string): boolean {
+  if (key.length !== MMKV_AES256_KEY_BYTES) return false;
+  for (let i = 0; i < key.length; i++) {
+    const code = key.charCodeAt(i);
+    if (code > 0x7f) return false;
+  }
+  return true;
+}
+
+function createPlainBlockedMMKV(): MMKV {
+  return createMMKV({ id: "blocked-mmkv" });
+}
+
+function createEncryptedBlockedMMKV(encryptionKey: string): MMKV {
+  return createMMKV({
+    id: "blocked-mmkv-enc",
+    encryptionKey,
+    encryptionType: "AES-256",
+  });
+}
+
+/**
+ * Async initializer for encrypted blocked storage. Called during boot before
+ * persist hydration. If SecureStore is available, re-creates MMKV with key.
+ *
+ * Key contract (react-native-mmkv v4):
+ * - AES-256 → encryptionKey must be exactly 32 bytes
+ * - Do not rotate a valid existing SecureStore key (would lock encrypted data)
+ * - Legacy 64-char hex keys are invalid → regenerate (they never encrypted successfully)
+ */
 export async function initBlockedStorage(): Promise<void> {
   try {
-    let key = await SecureStore.getItemAsync("mmkv-key");
-    if (!key) {
-      // Spec: techstack §7 — encryptionKey via Crypto.getRandomBytes (hex for MMKV string key).
-      // Do not rotate an existing SecureStore key — that would lock encrypted MMKV data.
-      const bytes = Crypto.getRandomBytes(32);
-      key = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-      await SecureStore.setItemAsync("mmkv-key", key);
+    const available = await SecureStore.isAvailableAsync();
+    if (!available) {
+      if (__DEV__)
+        console.warn(
+          "[persist] SecureStore unavailable, blocked uses plain MMKV"
+        );
+      blockedMMKV = createPlainBlockedMMKV();
+      return;
     }
+
+    let key = await SecureStore.getItemAsync(MMKV_KEY_SECURE_STORE);
+    if (!key || !isValidAes256Key(key)) {
+      // Spec: techstack §7 — encryptionKey via Crypto.getRandomBytes.
+      // Invalid/legacy keys (e.g. 64-char hex) never worked with MMKV AES — regenerate.
+      const bytes = Crypto.getRandomBytes(MMKV_AES256_KEY_BYTES);
+      key = bytesToAsciiKey(bytes);
+      await SecureStore.setItemAsync(MMKV_KEY_SECURE_STORE, key);
+    }
+
     try {
-      blockedMMKV = createMMKV({ id: "blocked-mmkv-enc", encryptionKey: key });
+      blockedMMKV = createEncryptedBlockedMMKV(key);
     } catch {
       if (__DEV__)
         console.warn("[persist] MMKV encryption not supported, using plain");
-      blockedMMKV = createMMKV({ id: "blocked-mmkv" });
+      blockedMMKV = createPlainBlockedMMKV();
     }
   } catch {
     if (__DEV__)
       console.warn(
         "[persist] SecureStore unavailable, blocked uses plain MMKV"
       );
-    blockedMMKV = createMMKV({ id: "blocked-mmkv" });
+    blockedMMKV = createPlainBlockedMMKV();
   }
+}
+
+/** Test seam: reset module MMKV refs so initBlockedStorage can re-run cleanly. */
+export function __resetBlockedMMKVForTests(): void {
+  blockedMMKV = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,7 +184,7 @@ export function getPersistedThemeModeSync(): ThemeMode {
   }
 }
 
-// Expose direct instances for debugging / future migrations
+// Expose direct instances for debugging / tests
 export function getRawBlockedMMKV(): MMKV {
   return getBlockedMMKV();
 }

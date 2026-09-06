@@ -112,9 +112,12 @@ type SecureStoreMock = {
 
 export function clearSecureStoreMock(): void {
   // SecureStore is mocked in test-setup.ts with __clear + jest.fn() methods
-  const mocked = SecureStore as unknown as SecureStoreMock;
+  const mocked = SecureStore as unknown as SecureStoreMock & {
+    isAvailableAsync?: jest.Mock;
+  };
   mocked.__clear?.();
   mocked.getItemAsync.mockClear();
   mocked.setItemAsync.mockClear();
   mocked.deleteItemAsync.mockClear();
+  mocked.isAvailableAsync?.mockClear();
 }

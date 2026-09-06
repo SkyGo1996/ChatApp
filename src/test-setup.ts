@@ -58,6 +58,7 @@ jest.mock("expo-crypto", () => {
 jest.mock("expo-secure-store", () => {
   const store = new Map<string, string>();
   return {
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
     getItemAsync: jest.fn((key: string) =>
       Promise.resolve(store.get(key) ?? null)
     ),
