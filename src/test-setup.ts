@@ -203,6 +203,29 @@ jest.mock("expo-image", () => {
   return { Image };
 });
 
+// 12. expo-glass-effect — no native Liquid Glass in Jest
+jest.mock("expo-glass-effect", () => {
+  const React = require("react") as typeof import("react");
+  const { View } = require("react-native") as typeof import("react-native");
+  const GlassView = (props: Record<string, unknown>) =>
+    React.createElement(View, { ...props, testID: "glass-view" });
+  return {
+    GlassView,
+    GlassContainer: GlassView,
+    isLiquidGlassAvailable: () => false,
+    isGlassEffectAPIAvailable: () => false,
+  };
+});
+
+// 13. expo-blur — no native blur in Jest
+jest.mock("expo-blur", () => {
+  const React = require("react") as typeof import("react");
+  const { View } = require("react-native") as typeof import("react-native");
+  const BlurView = (props: Record<string, unknown>) =>
+    React.createElement(View, { ...props, testID: "blur-view" });
+  return { BlurView };
+});
+
 // RNTL v14 built-in matchers: no need for @testing-library/jest-native/extend-expect
 // Importing from @testing-library/react-native auto-extends expect.
 // Keep explicit import for coverage if pure import is avoided in some tests.

@@ -70,9 +70,11 @@ describe("ChatDetailScreen", () => {
     expect(await screen.findByText("Visible bubble body")).toBeTruthy();
     expect(screen.queryByText("Secret title must not render")).toBeNull();
     expect(screen.getByTestId("messages-list")).toBeTruthy();
+    expect(screen.getByTestId("composer")).toBeTruthy();
+    expect(screen.getByLabelText("Send")).toBeTruthy();
   });
 
-  test("shows ErrorRetry when initial load fails", async () => {
+  test("shows composer even when initial load fails", async () => {
     server.use(
       http.get(postsPath, () =>
         HttpResponse.json({ error: "Internal" }, { status: 500 })
@@ -88,5 +90,7 @@ describe("ChatDetailScreen", () => {
       expect(screen.getByLabelText("Retry messages")).toBeTruthy();
     });
     expect(screen.getByText("Something went wrong.")).toBeTruthy();
+    expect(screen.getByTestId("composer")).toBeTruthy();
+    expect(screen.getByLabelText("Send")).toBeDisabled();
   });
 });

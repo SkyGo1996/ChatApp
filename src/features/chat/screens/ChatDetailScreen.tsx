@@ -5,6 +5,7 @@ import {
 } from "@shopify/flash-list";
 import { useNavigation } from "expo-router";
 import {
+  forwardRef,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -17,8 +18,21 @@ import {
   NativeSyntheticEvent,
   Platform,
   View,
+  type ScrollViewProps,
 } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import {
+  KeyboardChatScrollView,
+  KeyboardGestureArea,
+  KeyboardStickyView,
+  type KeyboardChatScrollViewProps,
+} from "react-native-keyboard-controller";
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 import { ErrorRetry } from "@/components/ErrorRetry";
@@ -29,11 +43,13 @@ import { motion } from "@/theme/tokens";
 
 import {
   ChatHeaderTitle,
+  Composer,
   DateSeparator,
   MessageBubble,
   MessageShimmer,
   ScrollToBottomFAB,
 } from "@/features/chat/components";
+import { CHAT_INPUT_NATIVE_ID } from "@/features/chat/composerIds";
 import { useContactIdentity } from "@/features/chat/hooks/useContactIdentity";
 import { useMessages } from "@/features/chat/hooks/useMessages";
 import {
@@ -42,12 +58,42 @@ import {
 } from "@/features/chat/screens/buildChatListItems";
 
 const SCROLL_FAB_THRESHOLD_PX = 200;
+const COMPOSER_MARGIN = 8;
+
+/** Module-scope SharedValue write — React Compiler immutability seam. */
+function setExtraContentPadding(
+  padding: SharedValue<number>,
+  extra: number
+): void {
+  padding.value = withTiming(extra, { duration: 200 });
+}
 
 type Props = {
   conversationId: string;
   contactName?: string | undefined;
   contactAvatar?: string | undefined;
 };
+
+type ChatScrollViewProps = ScrollViewProps &
+  KeyboardChatScrollViewProps & {
+    bottomOffset: number;
+  };
+
+const ChatScrollView = forwardRef<
+  React.ElementRef<typeof KeyboardChatScrollView>,
+  ChatScrollViewProps
+>(function ChatScrollView({ bottomOffset, ...props }, ref) {
+  return (
+    <KeyboardChatScrollView
+      ref={ref}
+      automaticallyAdjustContentInsets={false}
+      contentInsetAdjustmentBehavior="never"
+      keyboardDismissMode="interactive"
+      offset={bottomOffset}
+      {...props}
+    />
+  );
+});
 
 function messagesErrorMessage(error: ApiError | null): string {
   if (!error) return "Something went wrong.";
@@ -97,7 +143,17 @@ function getItemType(item: ChatListItem): string {
   return item.type;
 }
 
-function MessagesList({ conversationId }: { conversationId: string }) {
+type MessagesListProps = {
+  conversationId: string;
+  bottomOffset: number;
+  extraContentPadding: SharedValue<number>;
+};
+
+function MessagesList({
+  conversationId,
+  bottomOffset,
+  extraContentPadding,
+}: MessagesListProps) {
   const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
   const listRef = useRef<FlashListRef<ChatListItem>>(null);
@@ -117,6 +173,17 @@ function MessagesList({ conversationId }: { conversationId: string }) {
 
   const retryDisabled = useRetryDisabledUntil(error);
   const listItems = useMemo(() => buildChatListItems(items), [items]);
+
+  const renderScrollComponent = useCallback(
+    (props: ScrollViewProps) => (
+      <ChatScrollView
+        {...props}
+        bottomOffset={bottomOffset}
+        extraContentPadding={extraContentPadding}
+      />
+    ),
+    [bottomOffset, extraContentPadding]
+  );
 
   const onStartReached = useCallback(() => {
     if (
@@ -207,11 +274,11 @@ function MessagesList({ conversationId }: { conversationId: string }) {
         scrollEventThrottle={16}
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
-        contentInsetAdjustmentBehavior="automatic"
         maintainVisibleContentPosition={{
           autoscrollToBottomThreshold: 0.2,
           startRenderingFromBottom: true,
         }}
+        renderScrollComponent={renderScrollComponent}
         style={{ backgroundColor: theme.colors.bg }}
       />
       <ScrollToBottomFAB visible={fabVisible} onPress={scrollToBottom} />
@@ -227,11 +294,17 @@ export default function ChatDetailScreen({
   const navigation = useNavigation();
   const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
+  const insets = useSafeAreaInsets();
+  const extraContentPadding = useSharedValue(0);
   const contact = useContactIdentity(conversationId, {
     name: contactName,
     avatar: contactAvatar,
   });
   const chrome = chromeHeader(theme);
+
+  // Distance from list bottom to screen bottom ≈ composer resting height.
+  // KeyboardChatScrollView only lifts by keyboardHeight - offset.
+  const bottomOffset = Math.max(insets.bottom, COMPOSER_MARGIN) + 56;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -268,12 +341,38 @@ export default function ChatDetailScreen({
     chrome.elevation,
   ]);
 
+  const onExtraHeightChange = useCallback(
+    (extra: number) => {
+      setExtraContentPadding(extraContentPadding, extra);
+    },
+    [extraContentPadding]
+  );
+
+  // Ticket 08 replaces this no-op with useSendMessage.
+  const onSend = useCallback((_text: string) => {}, []);
+
+  const body = (
+    <KeyboardGestureArea
+      interpolator="ios"
+      style={styles.gesture}
+      textInputNativeID={CHAT_INPUT_NATIVE_ID}>
+      <MessagesList
+        conversationId={conversationId}
+        bottomOffset={bottomOffset}
+        extraContentPadding={extraContentPadding}
+      />
+      <KeyboardStickyView
+        offset={{
+          closed: 0,
+          opened: insets.bottom - COMPOSER_MARGIN,
+        }}>
+        <Composer onSend={onSend} onExtraHeightChange={onExtraHeightChange} />
+      </KeyboardStickyView>
+    </KeyboardGestureArea>
+  );
+
   if (reduceMotion) {
-    return (
-      <View style={styles.outer}>
-        <MessagesList conversationId={conversationId} />
-      </View>
-    );
+    return <View style={styles.outer}>{body}</View>;
   }
 
   return (
@@ -283,7 +382,7 @@ export default function ChatDetailScreen({
         opacity: motion.fadeUp.from.opacity,
         transform: [{ translateY: motion.fadeUp.from.translateY }],
       })}>
-      <MessagesList conversationId={conversationId} />
+      {body}
     </Animated.View>
   );
 }
@@ -291,6 +390,9 @@ export default function ChatDetailScreen({
 const styles = StyleSheet.create((theme) => ({
   outer: {
     backgroundColor: theme.colors.bg,
+    flex: 1,
+  },
+  gesture: {
     flex: 1,
   },
   listWrap: {
