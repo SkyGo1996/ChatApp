@@ -32,18 +32,17 @@ import { chromeComposer } from "@/theme/recipes";
 import { motionExpressive } from "@/theme/tokens";
 import { MESSAGE_MAX_LENGTH, sanitizeMessageInput } from "@/utils/sanitize";
 
-import { CHAT_INPUT_NATIVE_ID } from "@/features/chat/composerIds";
-
-const COMPOSER_MARGIN = 8;
-/** Baseline single-line input height used for extraContentPadding delta. */
-const MIN_INPUT_HEIGHT = 36;
+import {
+  CHAT_INPUT_NATIVE_ID,
+  COMPOSER_MARGIN,
+} from "@/features/chat/composerIds";
 
 type Props = {
   onSend: (text: string) => void;
   /** Seam for ticket 11 Block guard — disables input + Send. */
   disabled?: boolean;
-  /** Notifies parent of height growth above baseline (for FlashList padding). */
-  onExtraHeightChange?: (extraHeight: number) => void;
+  /** Full composer chrome height (incl. safe-area pad) for list bottom inset. */
+  onHeightChange?: (height: number) => void;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -96,40 +95,36 @@ function ComposerChrome({
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
 
+  const iosFill = {
+    backgroundColor: chrome.backgroundColor,
+    borderColor: chrome.borderColor,
+    borderWidth: chrome.borderWidth,
+    overflow: "hidden" as const,
+  };
+
   if (canGlass) {
     return (
-      <GlassView
-        style={[
-          style,
-          {
-            borderColor: chrome.borderColor,
-            borderWidth: chrome.borderWidth,
-            overflow: "hidden",
-          },
-        ]}
-        tintColor={theme.colors.glassTint}
-        glassEffectStyle="regular">
-        {children}
-      </GlassView>
+      <View style={[styles.glassHost, theme.shadow]}>
+        <GlassView
+          style={[style, iosFill]}
+          tintColor={theme.colors.glassTint}
+          glassEffectStyle="regular">
+          {children}
+        </GlassView>
+      </View>
     );
   }
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <BlurView
-        intensity={chrome.blurRadius ?? theme.blur.full}
-        tint="default"
-        style={[
-          style,
-          {
-            backgroundColor: chrome.backgroundColor,
-            borderColor: chrome.borderColor,
-            borderWidth: chrome.borderWidth,
-            overflow: "hidden",
-          },
-        ]}>
-        {children}
-      </BlurView>
+      <View style={[styles.glassHost, theme.shadow]}>
+        <BlurView
+          intensity={chrome.blurRadius ?? theme.blur.full}
+          tint="default"
+          style={[style, iosFill]}>
+          {children}
+        </BlurView>
+      </View>
     );
   }
 
@@ -138,7 +133,7 @@ function ComposerChrome({
       style={[
         style,
         {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: chrome.backgroundColor,
           borderColor: theme.colors.border,
           borderWidth: 1,
         },
@@ -152,11 +147,7 @@ function ComposerChrome({
  * Floating pill Message composer — pinned by KeyboardStickyView on Chat detail.
  * Sanitizes on send; Send disabled when empty after sanitization.
  */
-export function Composer({
-  onSend,
-  disabled = false,
-  onExtraHeightChange,
-}: Props) {
+export function Composer({ onSend, disabled = false, onHeightChange }: Props) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -173,10 +164,8 @@ export function Composer({
     transform: [{ scale: scale.value }],
   }));
 
-  const onInputLayout = (e: LayoutChangeEvent) => {
-    if (!onExtraHeightChange) return;
-    const height = e.nativeEvent.layout.height;
-    onExtraHeightChange(Math.max(height - MIN_INPUT_HEIGHT, 0));
+  const onWrapLayout = (e: LayoutChangeEvent) => {
+    onHeightChange?.(e.nativeEvent.layout.height);
   };
 
   const handlePressIn = () => {
@@ -207,34 +196,42 @@ export function Composer({
     setDraft("");
   };
 
+  // Always keep home-indicator inset. KeyboardStickyView offset.opened tucks
+  // this padding into the keyboard so the pill does not jump on hide.
   const bottomPad = Math.max(insets.bottom, COMPOSER_MARGIN);
 
   return (
-    <View testID="composer" style={[styles.wrap, { paddingBottom: bottomPad }]}>
+    <View
+      testID="composer"
+      onLayout={onWrapLayout}
+      style={[styles.wrap, { paddingBottom: bottomPad }]}>
       <ComposerChrome style={styles.pill}>
-        <TextInput
-          testID="composer-input"
-          nativeID={CHAT_INPUT_NATIVE_ID}
-          value={draft}
-          onChangeText={setDraft}
-          onLayout={onInputLayout}
-          placeholder="Type a Message..."
-          placeholderTextColor={theme.colors.textSecondary}
-          allowFontScaling
-          multiline
-          editable={!disabled}
-          maxLength={MESSAGE_MAX_LENGTH}
-          style={[
-            styles.input,
-            {
-              color: theme.colors.text,
-              maxHeight: maxInputHeight,
-              backgroundColor: disabled ? theme.colors.disabled : "transparent",
-            },
-          ]}
-          accessibilityLabel="Message input"
-          accessibilityState={{ disabled }}
-        />
+        <View style={[styles.inputWrap, { minHeight: sendSize }]}>
+          <TextInput
+            testID="composer-input"
+            nativeID={CHAT_INPUT_NATIVE_ID}
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="Type a Message..."
+            placeholderTextColor={theme.colors.textSecondary}
+            allowFontScaling
+            multiline
+            editable={!disabled}
+            maxLength={MESSAGE_MAX_LENGTH}
+            style={[
+              styles.input,
+              {
+                color: theme.colors.text,
+                maxHeight: maxInputHeight,
+                backgroundColor: disabled
+                  ? theme.colors.disabled
+                  : "transparent",
+              },
+            ]}
+            accessibilityLabel="Message input"
+            accessibilityState={{ disabled }}
+          />
+        </View>
         <AnimatedPressable
           testID="composer-send"
           onPress={handleSend}
@@ -269,6 +266,9 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.space(3),
     paddingTop: theme.space(2),
   },
+  glassHost: {
+    borderRadius: theme.radius.sheet,
+  },
   pill: {
     alignItems: "flex-end",
     borderRadius: theme.radius.sheet,
@@ -278,14 +278,20 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.space(3),
     paddingVertical: theme.space(2),
   },
-  input: {
+  inputWrap: {
     flex: 1,
+    justifyContent: "center",
+    minWidth: 0,
+  },
+  input: {
     fontSize: theme.type.body.size,
     fontWeight: theme.type.body.weight,
+    includeFontPadding: false,
     letterSpacing: theme.type.body.letterSpacing,
     lineHeight: theme.type.body.lineHeight,
-    minWidth: 0,
-    paddingVertical: theme.space(1),
+    margin: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     textAlignVertical: "center",
   },
   send: {

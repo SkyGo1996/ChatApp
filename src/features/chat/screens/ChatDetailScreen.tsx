@@ -26,12 +26,7 @@ import {
   KeyboardStickyView,
   type KeyboardChatScrollViewProps,
 } from "react-native-keyboard-controller";
-import Animated, {
-  FadeInUp,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
@@ -49,7 +44,10 @@ import {
   MessageShimmer,
   ScrollToBottomFAB,
 } from "@/features/chat/components";
-import { CHAT_INPUT_NATIVE_ID } from "@/features/chat/composerIds";
+import {
+  CHAT_INPUT_NATIVE_ID,
+  COMPOSER_MARGIN,
+} from "@/features/chat/composerIds";
 import { useContactIdentity } from "@/features/chat/hooks/useContactIdentity";
 import { useMessages } from "@/features/chat/hooks/useMessages";
 import {
@@ -58,15 +56,12 @@ import {
 } from "@/features/chat/screens/buildChatListItems";
 
 const SCROLL_FAB_THRESHOLD_PX = 200;
-const COMPOSER_MARGIN = 8;
-
-/** Module-scope SharedValue write — React Compiler immutability seam. */
-function setExtraContentPadding(
-  padding: SharedValue<number>,
-  extra: number
-): void {
-  padding.value = withTiming(extra, { duration: 200 });
-}
+/** Fallback until Composer onLayout fires (pill + pad). */
+const COMPOSER_HEIGHT_FALLBACK = 72;
+const COMPOSER_INSET_KEY = "composer-inset";
+const HEADER_INSET_KEY = "header-inset";
+/** Compact iOS nav bar content height (ChatHeaderTitle avatar is 44pt). */
+const IOS_HEADER_BAR_HEIGHT = 44;
 
 type Props = {
   conversationId: string;
@@ -74,23 +69,23 @@ type Props = {
   contactAvatar?: string | undefined;
 };
 
-type ChatScrollViewProps = ScrollViewProps &
-  KeyboardChatScrollViewProps & {
-    bottomOffset: number;
-  };
+type ChatScrollViewProps = ScrollViewProps & KeyboardChatScrollViewProps;
 
 const ChatScrollView = forwardRef<
   React.ElementRef<typeof KeyboardChatScrollView>,
   ChatScrollViewProps
->(function ChatScrollView({ bottomOffset, ...props }, ref) {
+>(function ChatScrollView(props, ref) {
+  const insets = useSafeAreaInsets();
   return (
     <KeyboardChatScrollView
+      {...props}
       ref={ref}
       automaticallyAdjustContentInsets={false}
       contentInsetAdjustmentBehavior="never"
       keyboardDismissMode="interactive"
-      offset={bottomOffset}
-      {...props}
+      // Composer keeps home-indicator padding; sticky opened-offset tucks it
+      // into the keyboard, so list lift is keyboardHeight minus that tuck.
+      offset={Math.max(0, insets.bottom - COMPOSER_MARGIN)}
     />
   );
 });
@@ -128,35 +123,49 @@ function useRetryDisabledUntil(error: ApiError | null): boolean {
   return disabled;
 }
 
-const renderChatItem: ListRenderItem<ChatListItem> = ({ item }) => {
+type ListInsetItem = {
+  type: "inset";
+  key: string;
+  height: number;
+};
+
+type MessagesListItem = ChatListItem | ListInsetItem;
+
+const renderChatItem: ListRenderItem<MessagesListItem> = ({ item }) => {
   if (item.type === "separator") {
     return <DateSeparator label={item.label} />;
+  }
+  if (item.type === "inset") {
+    return (
+      <View
+        style={{ height: item.height }}
+        pointerEvents="none"
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      />
+    );
   }
   return <MessageBubble message={item.message} marginTop={item.marginTop} />;
 };
 
-function keyExtractor(item: ChatListItem): string {
+function keyExtractor(item: MessagesListItem): string {
   return item.key;
 }
 
-function getItemType(item: ChatListItem): string {
+function getItemType(item: MessagesListItem): string {
   return item.type;
 }
 
 type MessagesListProps = {
   conversationId: string;
-  bottomOffset: number;
-  extraContentPadding: SharedValue<number>;
+  composerHeight: number;
 };
 
-function MessagesList({
-  conversationId,
-  bottomOffset,
-  extraContentPadding,
-}: MessagesListProps) {
+function MessagesList({ conversationId, composerHeight }: MessagesListProps) {
   const { theme } = useUnistyles();
+  const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const listRef = useRef<FlashListRef<ChatListItem>>(null);
+  const listRef = useRef<FlashListRef<MessagesListItem>>(null);
   const [fabVisible, setFabVisible] = useState(false);
 
   const {
@@ -172,17 +181,36 @@ function MessagesList({
   } = useMessages(conversationId);
 
   const retryDisabled = useRetryDisabledUntil(error);
-  const listItems = useMemo(() => buildChatListItems(items), [items]);
+  const composerClearance = composerHeight + theme.space(2);
+  // Transparent iOS header overlays the list; Android's opaque header already
+  // consumes layout so the list starts below it.
+  const headerClearance =
+    Platform.OS === "ios"
+      ? insets.top + IOS_HEADER_BAR_HEIGHT + theme.space(2)
+      : 0;
+  const listItems = useMemo((): MessagesListItem[] => {
+    const built = buildChatListItems(items);
+    // Spacers must be rows (not contentContainerStyle / ListHeader / ListFooter).
+    // FlashList v2 startRenderingFromBottom only accounts for ViewHolder content.
+    const rows: MessagesListItem[] = [];
+    if (headerClearance > 0) {
+      rows.push({
+        type: "inset",
+        key: HEADER_INSET_KEY,
+        height: headerClearance,
+      });
+    }
+    rows.push(...built, {
+      type: "inset",
+      key: COMPOSER_INSET_KEY,
+      height: composerClearance,
+    });
+    return rows;
+  }, [items, composerClearance, headerClearance]);
 
   const renderScrollComponent = useCallback(
-    (props: ScrollViewProps) => (
-      <ChatScrollView
-        {...props}
-        bottomOffset={bottomOffset}
-        extraContentPadding={extraContentPadding}
-      />
-    ),
-    [bottomOffset, extraContentPadding]
+    (props: ScrollViewProps) => <ChatScrollView {...props} />,
+    []
   );
 
   const onStartReached = useCallback(() => {
@@ -243,19 +271,33 @@ function MessagesList({
   ]);
 
   if (isPending) {
-    return <MessageShimmer variant="page" />;
+    return (
+      <View
+        style={[
+          styles.listWrap,
+          { paddingBottom: composerClearance, paddingTop: headerClearance },
+        ]}>
+        <MessageShimmer variant="page" />
+      </View>
+    );
   }
 
   if (isError && items.length === 0) {
     return (
-      <ErrorRetry
-        message={messagesErrorMessage(error)}
-        onRetry={() => {
-          void refetch();
-        }}
-        retryDisabled={retryDisabled}
-        retryAccessibilityLabel="Retry messages"
-      />
+      <View
+        style={[
+          styles.listWrap,
+          { paddingBottom: composerClearance, paddingTop: headerClearance },
+        ]}>
+        <ErrorRetry
+          message={messagesErrorMessage(error)}
+          onRetry={() => {
+            void refetch();
+          }}
+          retryDisabled={retryDisabled}
+          retryAccessibilityLabel="Retry messages"
+        />
+      </View>
     );
   }
 
@@ -273,7 +315,7 @@ function MessagesList({
         onScroll={onScroll}
         scrollEventThrottle={16}
         ListHeaderComponent={listHeader}
-        contentContainerStyle={styles.listContent}
+        extraData={`${composerHeight}:${headerClearance}`}
         maintainVisibleContentPosition={{
           autoscrollToBottomThreshold: 0.2,
           startRenderingFromBottom: true,
@@ -281,7 +323,11 @@ function MessagesList({
         renderScrollComponent={renderScrollComponent}
         style={{ backgroundColor: theme.colors.bg }}
       />
-      <ScrollToBottomFAB visible={fabVisible} onPress={scrollToBottom} />
+      <ScrollToBottomFAB
+        visible={fabVisible}
+        onPress={scrollToBottom}
+        bottomOffset={composerClearance}
+      />
     </View>
   );
 }
@@ -295,16 +341,14 @@ export default function ChatDetailScreen({
   const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
-  const extraContentPadding = useSharedValue(0);
+  const [composerHeight, setComposerHeight] = useState(
+    COMPOSER_HEIGHT_FALLBACK + Math.max(insets.bottom, COMPOSER_MARGIN)
+  );
   const contact = useContactIdentity(conversationId, {
     name: contactName,
     avatar: contactAvatar,
   });
   const chrome = chromeHeader(theme);
-
-  // Distance from list bottom to screen bottom ≈ composer resting height.
-  // KeyboardChatScrollView only lifts by keyboardHeight - offset.
-  const bottomOffset = Math.max(insets.bottom, COMPOSER_MARGIN) + 56;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -341,11 +385,16 @@ export default function ChatDetailScreen({
     chrome.elevation,
   ]);
 
-  const onExtraHeightChange = useCallback(
-    (extra: number) => {
-      setExtraContentPadding(extraContentPadding, extra);
-    },
-    [extraContentPadding]
+  const onComposerHeightChange = useCallback((height: number) => {
+    setComposerHeight((prev) => (prev === height ? prev : height));
+  }, []);
+
+  const stickyOffset = useMemo(
+    () => ({
+      closed: 0,
+      opened: Math.max(0, insets.bottom - COMPOSER_MARGIN),
+    }),
+    [insets.bottom]
   );
 
   // Ticket 08 replaces this no-op with useSendMessage.
@@ -358,15 +407,12 @@ export default function ChatDetailScreen({
       textInputNativeID={CHAT_INPUT_NATIVE_ID}>
       <MessagesList
         conversationId={conversationId}
-        bottomOffset={bottomOffset}
-        extraContentPadding={extraContentPadding}
+        composerHeight={composerHeight}
       />
-      <KeyboardStickyView
-        offset={{
-          closed: 0,
-          opened: insets.bottom - COMPOSER_MARGIN,
-        }}>
-        <Composer onSend={onSend} onExtraHeightChange={onExtraHeightChange} />
+      {/* Absolute sticky composer floats over the list; a trailing list
+          spacer reserves space so timestamps/bubbles never sit under the pill. */}
+      <KeyboardStickyView offset={stickyOffset} style={styles.composerSticky}>
+        <Composer onSend={onSend} onHeightChange={onComposerHeightChange} />
       </KeyboardStickyView>
     </KeyboardGestureArea>
   );
@@ -398,7 +444,11 @@ const styles = StyleSheet.create((theme) => ({
   listWrap: {
     flex: 1,
   },
-  listContent: {
-    paddingBottom: theme.space(4),
+  composerSticky: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    zIndex: 3,
   },
 }));

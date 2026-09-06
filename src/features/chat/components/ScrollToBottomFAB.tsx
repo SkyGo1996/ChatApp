@@ -17,6 +17,8 @@ import { motion, motionExpressive } from "@/theme/tokens";
 type Props = {
   visible: boolean;
   onPress: () => void;
+  /** Distance from screen bottom so FAB sits above the composer. */
+  bottomOffset?: number;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -43,13 +45,14 @@ function fabPressOutSpring(scale: SharedValue<number>): void {
  * Appear/hide: 200ms opacity fade on both platforms.
  * Android tap: fabSpring scale (not opacity). Reduce Motion → instant.
  */
-export function ScrollToBottomFAB({ visible, onPress }: Props) {
+export function ScrollToBottomFAB({ visible, onPress, bottomOffset }: Props) {
   const { theme } = useUnistyles();
   const reduceMotion = useReduceMotion();
   const opacity = useSharedValue(visible ? 1 : 0);
   const scale = useSharedValue(1);
   const chrome = chromeFab(theme);
   const androidPress = Platform.OS === "android" && !reduceMotion;
+  const bottom = bottomOffset ?? theme.space(6);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -99,6 +102,7 @@ export function ScrollToBottomFAB({ visible, onPress }: Props) {
           borderColor: chrome.borderColor,
           borderWidth: chrome.borderWidth,
           elevation: chrome.elevation,
+          bottom,
         },
         animatedStyle,
       ]}>
@@ -111,7 +115,6 @@ const styles = StyleSheet.create((theme) => ({
   fab: {
     alignItems: "center",
     borderRadius: theme.radius.full,
-    bottom: theme.space(6),
     height: 48,
     justifyContent: "center",
     position: "absolute",

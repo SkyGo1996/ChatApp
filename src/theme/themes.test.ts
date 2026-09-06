@@ -89,6 +89,9 @@ describe("chrome recipes — platform mapping", () => {
     expect(bar.blurRadius).toBe(40);
 
     expect(chromeHeader(lightTheme).useGlass).toBe(true);
+    expect(chromeComposer(lightTheme).backgroundColor).toBe(
+      lightTheme.colors.inputBg
+    );
     expect(chromeComposer(darkTheme).borderColor).toBe(
       darkTheme.colors.glassBorder
     );

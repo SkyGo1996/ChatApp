@@ -70,7 +70,13 @@ export function chromeHeader(theme: AppTheme): ChromeRecipe {
 
 /** Floating composer pill. */
 export function chromeComposer(theme: AppTheme): ChromeRecipe {
-  if (isIOS()) return iosGlassChrome(theme);
+  if (isIOS()) {
+    return {
+      ...iosGlassChrome(theme),
+      // `inputBg` (not `glassBg`) so the overlay well stays distinct from chat `bg`.
+      backgroundColor: theme.colors.inputBg,
+    };
+  }
   return androidTonalChrome(theme.colors.surface, 2, theme);
 }
 
