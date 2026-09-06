@@ -80,4 +80,19 @@ describe("themedStackOptions", () => {
     expect(opts.headerTransparent).toBe(false);
     expect(opts.headerBlurEffect).toBeUndefined();
   });
+
+  test("back button label is hidden globally (minimal) on all variants", () => {
+    Object.defineProperty(Platform, "OS", { value: "ios" });
+    expect(themedStackOptions(lightTheme).headerBackButtonDisplayMode).toBe(
+      "minimal"
+    );
+    expect(
+      themedStackOptions(lightTheme, { transparent: true })
+        .headerBackButtonDisplayMode
+    ).toBe("minimal");
+    Object.defineProperty(Platform, "OS", { value: "android" });
+    expect(themedStackOptions(darkTheme).headerBackButtonDisplayMode).toBe(
+      "minimal"
+    );
+  });
 });

@@ -2,11 +2,10 @@ import "react-native-reanimated";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
+import { SplashScreen, Stack, useRootNavigationState } from "expo-router";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -32,11 +31,16 @@ export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
-function InnerProviders({ children }: { children: ReactNode }) {
+function InnerProviders({
+  children,
+  onPersistLift,
+}: {
+  children: ReactNode;
+  onPersistLift: () => void;
+}) {
   const [persistor, setPersistor] = useState<ReturnType<
     typeof ensurePersistor
   > | null>(null);
-  const splashHidden = useRef(false);
 
   useEffect(() => {
     async function prepare() {
@@ -59,16 +63,9 @@ function InnerProviders({ children }: { children: ReactNode }) {
     void prepare();
   }, []);
 
-  // Hide splash only after persist hydrate + theme apply.
-  // Fonts are already ready — RootLayout gates InnerProviders on fontsReady.
   const handleBeforeLift = useCallback(() => {
-    const mode = store.getState().theme.mode;
-    applyThemeMode(mode);
-    if (!splashHidden.current) {
-      splashHidden.current = true;
-      SplashScreen.hide();
-    }
-  }, []);
+    onPersistLift();
+  }, [onPersistLift]);
 
   if (!persistor) {
     return null;
@@ -97,12 +94,18 @@ function ThemedRootStack() {
   );
   return (
     <Stack screenOptions={opaque}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="index"
+        options={{ headerShown: false, animation: "none" }}
+      />
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false, animation: "none" }}
+      />
       <Stack.Screen
         name="chats/[id]"
         options={{
           title: "Chat",
-          headerBackButtonDisplayMode: "minimal",
           ...transparentChat,
         }}
       />
@@ -110,11 +113,13 @@ function ThemedRootStack() {
         name="chats/[id]/profile"
         options={{
           title: "Profile",
-          headerBackButtonDisplayMode: "minimal",
           ...opaque,
         }}
       />
-      <Stack.Screen name="+not-found" />
+      <Stack.Screen
+        name="+not-found"
+        options={{ title: "Not Found", ...opaque }}
+      />
     </Stack>
   );
 }
@@ -126,6 +131,40 @@ export default function RootLayout() {
   // Failure must not hang splash — treat error as ready.
   const [fontsLoaded, fontError] = useFonts({});
   const fontsReady = fontsLoaded || fontError != null;
+
+  const rootNav = useRootNavigationState();
+  const navReady = (() => {
+    if (rootNav?.key == null) return false;
+    // Don't hide while still on the transient `index` redirect or +not-found.
+    // Hide only once the root stack has navigated to `(tabs)` (or other real route).
+    const nav = rootNav as unknown as {
+      routes?: { name: string }[];
+      index?: number;
+    };
+    const focused = nav.routes?.[nav.index ?? 0];
+    if (focused && (focused.name === "index" || focused.name === "+not-found"))
+      return false;
+    return true;
+  })();
+  const [persistLifted, setPersistLifted] = useState(false);
+  const [layoutDone, setLayoutDone] = useState(false);
+  const splashHidden = useRef(false);
+
+  const appReady = fontsReady && persistLifted && navReady;
+  const onLayout = useCallback(() => setLayoutDone(true), []);
+
+  useEffect(() => {
+    if (appReady && layoutDone && !splashHidden.current) {
+      splashHidden.current = true;
+      void SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [appReady, layoutDone]);
+
+  const handlePersistLift = useCallback(() => {
+    const mode = store.getState().theme.mode;
+    applyThemeMode(mode);
+    setPersistLifted(true);
+  }, []);
 
   const handleReset = useCallback(() => {
     queryClient.clear();
@@ -141,8 +180,10 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <KeyboardProvider>
-            <InnerProviders>
-              <ThemedRootStack />
+            <InnerProviders onPersistLift={handlePersistLift}>
+              <View style={{ flex: 1 }} onLayout={onLayout} collapsable={false}>
+                <ThemedRootStack />
+              </View>
             </InnerProviders>
             <Toaster />
           </KeyboardProvider>

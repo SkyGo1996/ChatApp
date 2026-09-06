@@ -24,6 +24,7 @@ export type ThemedStackOptions = Pick<
   | "headerShadowVisible"
   | "headerTransparent"
   | "headerBlurEffect"
+  | "headerBackButtonDisplayMode"
   | "contentStyle"
 >;
 
@@ -49,6 +50,9 @@ export function themedStackOptions(
       headerTitleStyle: { color: theme.colors.text },
       headerShadowVisible: false,
       headerBlurEffect: undefined,
+      // Global default: chevron only, no back-title label (iOS; Android
+      // back arrow shows no label regardless).
+      headerBackButtonDisplayMode: "minimal",
       contentStyle: { backgroundColor: theme.colors.bg },
     };
   }
@@ -63,6 +67,9 @@ export function themedStackOptions(
     headerTitleStyle: { color: theme.colors.text },
     headerShadowVisible: chrome.elevation > 0,
     headerBlurEffect: undefined,
+    // Global default: chevron only, no back-title label (iOS; Android
+    // back arrow shows no label regardless).
+    headerBackButtonDisplayMode: "minimal",
     contentStyle: { backgroundColor: theme.colors.bg },
   };
 }
