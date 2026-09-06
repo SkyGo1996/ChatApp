@@ -73,7 +73,7 @@ function ProfileWash({
 
   if (canGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow, hostFill]}>
+      <View style={[styles.glassHost, hostFill]}>
         <GlassView
           style={[style, iosBorder]}
           tintColor={theme.colors.glassTint}
@@ -87,7 +87,7 @@ function ProfileWash({
 
   if (!reduceTransparency && chrome.useGlass) {
     return (
-      <View style={[styles.glassHost, theme.shadow, hostFill]}>
+      <View style={[styles.glassHost, hostFill]}>
         <BlurView
           intensity={chrome.blurRadius ?? theme.blur.full}
           tint="default"

@@ -2,6 +2,8 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { DynamicColorIOS, Platform } from "react-native";
 import { useUnistyles } from "react-native-unistyles";
 
+import { glassColorScheme } from "@/theme/recipes";
+
 export default function TabsLayout() {
   const { theme } = useUnistyles();
 
@@ -36,7 +38,12 @@ export default function TabsLayout() {
         selected: { color: tintColor },
       }}
       // iOS 26+: minimize when scrolling (no-op on older iOS / Android)
-      minimizeBehavior="onScrollDown">
+      minimizeBehavior="onScrollDown"
+      // Pin TabsHost colorScheme to Unistyles (not OS inherit) so Liquid Glass
+      // does not flash dark→light when app theme ≠ system appearance.
+      unstable_nativeProps={{
+        colorScheme: glassColorScheme(theme),
+      }}>
       <NativeTabs.Trigger name="chats" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

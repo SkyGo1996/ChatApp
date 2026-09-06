@@ -1,3 +1,4 @@
+import { Appearance } from "react-native";
 import { UnistylesRuntime } from "react-native-unistyles";
 
 import { darkTheme, lightTheme } from "./themes";
@@ -7,6 +8,7 @@ describe("applyThemeMode", () => {
   let setAdaptiveThemes: jest.SpyInstance;
   let setTheme: jest.SpyInstance;
   let setRootViewBackgroundColor: jest.SpyInstance;
+  let setColorScheme: jest.SpyInstance;
   let colorSchemeDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
@@ -16,6 +18,7 @@ describe("applyThemeMode", () => {
       UnistylesRuntime,
       "setRootViewBackgroundColor"
     );
+    setColorScheme = jest.spyOn(Appearance, "setColorScheme");
     colorSchemeDescriptor = Object.getOwnPropertyDescriptor(
       UnistylesRuntime,
       "colorScheme"
@@ -26,6 +29,7 @@ describe("applyThemeMode", () => {
     setAdaptiveThemes.mockRestore();
     setTheme.mockRestore();
     setRootViewBackgroundColor.mockRestore();
+    setColorScheme.mockRestore();
     if (colorSchemeDescriptor) {
       Object.defineProperty(
         UnistylesRuntime,
@@ -47,6 +51,7 @@ describe("applyThemeMode", () => {
     applyThemeMode("system");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(true);
     expect(setTheme).not.toHaveBeenCalled();
+    expect(setColorScheme).toHaveBeenCalledWith("unspecified");
     expect(setRootViewBackgroundColor).toHaveBeenCalledWith(
       lightTheme.colors.bg
     );
@@ -56,6 +61,7 @@ describe("applyThemeMode", () => {
     mockColorScheme("dark");
     applyThemeMode("system");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(true);
+    expect(setColorScheme).toHaveBeenCalledWith("unspecified");
     expect(setRootViewBackgroundColor).toHaveBeenCalledWith(
       darkTheme.colors.bg
     );
@@ -66,6 +72,7 @@ describe("applyThemeMode", () => {
     applyThemeMode("system");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(true);
     expect(setTheme).not.toHaveBeenCalled();
+    expect(setColorScheme).toHaveBeenCalledWith("unspecified");
     expect(setRootViewBackgroundColor).toHaveBeenCalledWith(
       lightTheme.colors.bg
     );
@@ -75,6 +82,7 @@ describe("applyThemeMode", () => {
     applyThemeMode("light");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(false);
     expect(setTheme).toHaveBeenCalledWith("light");
+    expect(setColorScheme).toHaveBeenCalledWith("light");
     const adaptiveOrder = setAdaptiveThemes.mock.invocationCallOrder[0] ?? 0;
     const themeOrder = setTheme.mock.invocationCallOrder[0] ?? 0;
     expect(adaptiveOrder).toBeLessThan(themeOrder);
@@ -87,6 +95,7 @@ describe("applyThemeMode", () => {
     applyThemeMode("dark");
     expect(setAdaptiveThemes).toHaveBeenCalledWith(false);
     expect(setTheme).toHaveBeenCalledWith("dark");
+    expect(setColorScheme).toHaveBeenCalledWith("dark");
     const adaptiveOrder = setAdaptiveThemes.mock.invocationCallOrder[0] ?? 0;
     const themeOrder = setTheme.mock.invocationCallOrder[0] ?? 0;
     expect(adaptiveOrder).toBeLessThan(themeOrder);

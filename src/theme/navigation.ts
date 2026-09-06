@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Platform } from "react-native";
 import { useUnistyles } from "react-native-unistyles";
 
-import { chromeHeader } from "./recipes";
+import { chromeHeader, glassColorScheme } from "./recipes";
 import { darkTheme, type AppTheme } from "./themes";
 
 /**
@@ -27,6 +27,7 @@ export type ThemedStackOptions = Pick<
   | "headerBlurEffect"
   | "headerBackButtonDisplayMode"
   | "contentStyle"
+  | "unstable_nativeProps"
 >;
 
 /**
@@ -60,6 +61,18 @@ export function useNavigationTheme(): Theme {
   return useMemo(() => navigationTheme(theme, isDark), [theme, isDark]);
 }
 
+function headerNativeProps(
+  theme: AppTheme
+): ThemedStackOptions["unstable_nativeProps"] {
+  // Pin iOS 26 Liquid Glass back-button / header chrome to Unistyles, not OS
+  // inherit — avoids dark→light flash when app theme ≠ system appearance.
+  return {
+    headerConfig: {
+      experimental_userInterfaceStyle: glassColorScheme(theme),
+    },
+  };
+}
+
 export function themedStackOptions(
   theme: AppTheme,
   opts?: { transparent?: boolean }
@@ -67,6 +80,7 @@ export function themedStackOptions(
   const transparent = opts?.transparent ?? false;
   const isIOS = Platform.OS === "ios";
   const chrome = chromeHeader(theme);
+  const nativeProps = isIOS ? headerNativeProps(theme) : undefined;
 
   // Opaque headers: solid surface (chromeHeader => surface on Android, glassBg on iOS).
   // For iOS opaque we prefer surface (solid) so dark/light is crisp; chromeHeader
@@ -86,6 +100,7 @@ export function themedStackOptions(
       // back arrow shows no label regardless).
       headerBackButtonDisplayMode: "minimal",
       contentStyle: { backgroundColor: theme.colors.bg },
+      ...(nativeProps ? { unstable_nativeProps: nativeProps } : {}),
     };
   }
 
@@ -103,6 +118,7 @@ export function themedStackOptions(
     // back arrow shows no label regardless).
     headerBackButtonDisplayMode: "minimal",
     contentStyle: { backgroundColor: theme.colors.bg },
+    ...(nativeProps ? { unstable_nativeProps: nativeProps } : {}),
   };
 }
 

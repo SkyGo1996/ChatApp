@@ -44,6 +44,9 @@ describe("themedStackOptions", () => {
       backgroundColor: lightTheme.colors.bg,
     });
     expect(opts.headerShadowVisible).toBe(false); // chromeHeader elevation 0 on iOS
+    expect(opts.unstable_nativeProps).toEqual({
+      headerConfig: { experimental_userInterfaceStyle: "light" },
+    });
   });
 
   test("opaque dark iOS: no blur, surface bg, text tint", () => {
@@ -55,6 +58,9 @@ describe("themedStackOptions", () => {
     expect(opts.headerTintColor).toBe(darkTheme.colors.text);
     expect(opts.headerBlurEffect).toBeUndefined();
     expect(opts.contentStyle).toEqual({ backgroundColor: darkTheme.colors.bg });
+    expect(opts.unstable_nativeProps).toEqual({
+      headerConfig: { experimental_userInterfaceStyle: "dark" },
+    });
   });
 
   test("transparent light iOS: transparent bg, no blur, tint text", () => {
@@ -68,6 +74,9 @@ describe("themedStackOptions", () => {
     expect(opts.contentStyle).toEqual({
       backgroundColor: lightTheme.colors.bg,
     });
+    expect(opts.unstable_nativeProps).toEqual({
+      headerConfig: { experimental_userInterfaceStyle: "light" },
+    });
   });
 
   test("transparent dark iOS: no blur", () => {
@@ -76,6 +85,9 @@ describe("themedStackOptions", () => {
     expect(opts.headerTransparent).toBe(true);
     expect(opts.headerBlurEffect).toBeUndefined();
     expect(opts.headerTintColor).toBe(darkTheme.colors.text);
+    expect(opts.unstable_nativeProps).toEqual({
+      headerConfig: { experimental_userInterfaceStyle: "dark" },
+    });
   });
 
   test("opaque Android: no blur, surface bg, tint text, shadow from elevation", () => {
@@ -92,6 +104,7 @@ describe("themedStackOptions", () => {
     });
     // light elevation 2 on Android -> shadow visible
     expect(opts.headerShadowVisible).toBe(true);
+    expect(opts.unstable_nativeProps).toBeUndefined();
   });
 
   test("Android transparent flag is ignored (never transparent)", () => {
