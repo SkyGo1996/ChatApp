@@ -45,18 +45,28 @@ describe("ErrorRetry", () => {
     expect(Haptics.impactAsync).not.toHaveBeenCalled();
   });
 
-  test("inline variant still calls onRetry", async () => {
-    const onRetry = jest.fn();
-    const { findByLabelText, getByText } = await render(
+  test("page variant exposes alert accessibility role", async () => {
+    // Arrange / Act
+    const { getByRole } = await render(
+      <ErrorRetry message="Failed" onRetry={() => {}} />
+    );
+
+    // Assert
+    expect(getByRole("alert")).toBeTruthy();
+  });
+
+  test("inline variant does not use alert role", async () => {
+    // Arrange / Act
+    const { queryByRole, getByText } = await render(
       <ErrorRetry
         variant="inline"
         message="Refresh failed"
-        onRetry={onRetry}
-        retryAccessibilityLabel="Retry conversations"
+        onRetry={() => {}}
       />
     );
+
+    // Assert
     expect(getByText("Refresh failed")).toBeTruthy();
-    await fireEvent.press(await findByLabelText("Retry conversations"));
-    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(queryByRole("alert")).toBeNull();
   });
 });

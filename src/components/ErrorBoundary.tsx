@@ -1,4 +1,6 @@
 import React from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorRetry } from "./ErrorRetry";
 
@@ -13,6 +15,8 @@ type State = {
   hasError: boolean;
   error: Error | null;
 };
+
+const FALLBACK_MESSAGE = "Something went wrong.";
 
 export class ErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false, error: null };
@@ -34,18 +38,34 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render(): React.ReactNode {
     if (this.state.hasError) {
+      // Own SafeAreaProvider: root catch replaces the app tree (outside the
+      // layout provider). Nested screen catches already have one; nesting is OK.
       return (
-        <ErrorRetry
-          message={this.state.error?.message ?? "Something went wrong."}
-          onRetry={this.handleReset}
-          retryLabel={this.props.retryLabel ?? "Retry"}
-          retryAccessibilityLabel={
-            this.props.retryAccessibilityLabel ?? "Retry app"
-          }
-          hapticOnRetry={false}
-        />
+        <SafeAreaProvider>
+          <SafeAreaView
+            style={styles.safe}
+            edges={["top", "right", "bottom", "left"]}>
+            <ErrorRetry
+              message={FALLBACK_MESSAGE}
+              onRetry={this.handleReset}
+              retryLabel={this.props.retryLabel ?? "Retry"}
+              {...(this.props.retryAccessibilityLabel != null
+                ? {
+                    retryAccessibilityLabel: this.props.retryAccessibilityLabel,
+                  }
+                : {})}
+              hapticOnRetry={false}
+            />
+          </SafeAreaView>
+        </SafeAreaProvider>
       );
     }
     return this.props.children;
   }
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+});

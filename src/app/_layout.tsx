@@ -184,7 +184,10 @@ export default function RootLayout() {
   }
 
   return (
-    <ErrorBoundary key={bootId} onReset={handleReset}>
+    <ErrorBoundary
+      key={bootId}
+      onReset={handleReset}
+      retryAccessibilityLabel="Retry app">
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <KeyboardProvider>

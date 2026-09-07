@@ -37,7 +37,11 @@ export function ErrorRetry({
 
   return (
     <View style={variant === "inline" ? styles.inline : styles.container}>
-      <Text style={styles.message}>{message}</Text>
+      <Text
+        style={styles.message}
+        accessibilityRole={variant === "page" ? "alert" : undefined}>
+        {message}
+      </Text>
       {onRetry ? (
         <Pressable
           onPress={handleRetry}
