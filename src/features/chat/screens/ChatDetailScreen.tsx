@@ -7,7 +7,6 @@ import { useNavigation } from "expo-router";
 import {
   forwardRef,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -36,7 +35,8 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
-import { getRetryAfterMs, type ApiError } from "@/services/api/client";
+import { useRetryDisabledUntil } from "@/hooks/useRetryDisabledUntil";
+import { type ApiError } from "@/services/api/client";
 import { useBlock } from "@/store/useBlock";
 import { motion, space } from "@/theme/tokens";
 import * as Haptics from "expo-haptics";
@@ -104,28 +104,6 @@ function messagesErrorMessage(error: ApiError | null): string {
     return "Too many requests — try again";
   }
   return "Something went wrong.";
-}
-
-function useRetryDisabledUntil(error: ApiError | null): boolean {
-  const [trackedError, setTrackedError] = useState(error);
-  const [disabled, setDisabled] = useState(() => error?.status === 429);
-
-  if (error !== trackedError) {
-    setTrackedError(error);
-    setDisabled(error?.status === 429);
-  }
-
-  useEffect(() => {
-    if (error?.status !== 429) return;
-    const ms = getRetryAfterMs(error.retryAfter, error.headers);
-    const wait = Math.max(1000, ms ?? 1000);
-    const id = setTimeout(() => {
-      setDisabled(false);
-    }, wait);
-    return () => clearTimeout(id);
-  }, [error]);
-
-  return disabled;
 }
 
 type ListInsetItem = {

@@ -1,18 +1,12 @@
-import { BlurView } from "expo-blur";
-import {
-  GlassView,
-  isGlassEffectAPIAvailable,
-  isLiquidGlassAvailable,
-} from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import { Ban } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
-import { useReduceTransparency } from "@/hooks/useReduceTransparency";
 import { useBlock } from "@/store/useBlock";
-import { chromeSheet, glassColorScheme } from "@/theme/recipes";
+
+import { ProfileWash } from "./ProfileWash";
 
 import {
   AlertDialog,
@@ -30,57 +24,6 @@ type Props = {
   contactId: string;
   name: string;
 };
-
-function ProfileWash({
-  children,
-  style,
-}: {
-  children: React.ReactNode;
-  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
-}) {
-  const { theme } = useUnistyles();
-  const reduceTransparency = useReduceTransparency();
-  const chrome = chromeSheet(theme);
-
-  if (Platform.OS === "android") {
-    return <View style={[style, styles.chromeAndroid]}>{children}</View>;
-  }
-
-  const canGlass =
-    !reduceTransparency &&
-    isLiquidGlassAvailable() &&
-    isGlassEffectAPIAvailable();
-
-  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
-  if (canGlass) {
-    return (
-      <View style={[styles.glassHost, styles.hostFill]}>
-        <GlassView
-          style={[style, styles.iosBorder]}
-          tintColor={theme.colors.glassTint}
-          colorScheme={glassColorScheme(theme)}
-          glassEffectStyle="regular">
-          {children}
-        </GlassView>
-      </View>
-    );
-  }
-
-  if (!reduceTransparency && chrome.useGlass) {
-    return (
-      <View style={[styles.glassHost, styles.hostFill]}>
-        <BlurView
-          intensity={chrome.blurRadius ?? theme.blur.full}
-          tint="default"
-          style={[style, styles.blurFill]}>
-          {children}
-        </BlurView>
-      </View>
-    );
-  }
-
-  return <View style={[style, styles.chromeSolid]}>{children}</View>;
-}
 
 export function BlockConfirm({ contactId, name }: Props) {
   const { theme } = useUnistyles();
@@ -193,35 +136,7 @@ export function BlockConfirm({ contactId, name }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => {
-  const chrome = chromeSheet(theme);
   return {
-    glassHost: {
-      borderRadius: theme.radius.lg,
-    },
-    hostFill: {
-      backgroundColor: chrome.backgroundColor,
-    },
-    iosBorder: {
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-    },
-    blurFill: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-      overflow: "hidden" as const,
-    },
-    chromeAndroid: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-      elevation: chrome.elevation,
-    },
-    chromeSolid: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: theme.colors.border,
-      borderWidth: 1,
-    },
     blockCard: {
       borderRadius: theme.radius.lg,
       paddingHorizontal: theme.space(4),

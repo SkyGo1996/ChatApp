@@ -1,6 +1,6 @@
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { MessagesSquare } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -13,7 +13,8 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorRetry } from "@/components/ErrorRetry";
-import { getRetryAfterMs, type ApiError } from "@/services/api/client";
+import { useRetryDisabledUntil } from "@/hooks/useRetryDisabledUntil";
+import { type ApiError } from "@/services/api/client";
 
 import {
   ConversationRow,
@@ -32,28 +33,6 @@ function conversationsErrorMessage(error: ApiError | null): string {
     return "Too many requests — try again";
   }
   return "Something went wrong.";
-}
-
-function useRetryDisabledUntil(error: ApiError | null): boolean {
-  const [trackedError, setTrackedError] = useState(error);
-  const [disabled, setDisabled] = useState(() => error?.status === 429);
-
-  if (error !== trackedError) {
-    setTrackedError(error);
-    setDisabled(error?.status === 429);
-  }
-
-  useEffect(() => {
-    if (error?.status !== 429) return;
-    const ms = getRetryAfterMs(error.retryAfter, error.headers);
-    const wait = Math.max(1000, ms ?? 1000);
-    const id = setTimeout(() => {
-      setDisabled(false);
-    }, wait);
-    return () => clearTimeout(id);
-  }, [error]);
-
-  return disabled;
 }
 
 const renderConversationItem: ListRenderItem<Conversation> = ({ item }) => (

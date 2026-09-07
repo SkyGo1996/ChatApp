@@ -1,22 +1,8 @@
-import { BlurView } from "expo-blur";
-import {
-  GlassView,
-  isGlassEffectAPIAvailable,
-  isLiquidGlassAvailable,
-} from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { Phone } from "lucide-react-native";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { useCallback } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
@@ -24,11 +10,10 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { Avatar } from "@/components/Avatar";
 import { ErrorRetry } from "@/components/ErrorRetry";
 import { Shimmer } from "@/components/Shimmer";
-import { BlockConfirm } from "@/features/profile/components";
+import { BlockConfirm, ProfileWash } from "@/features/profile/components";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
-import { useReduceTransparency } from "@/hooks/useReduceTransparency";
-import { getRetryAfterMs, type ApiError } from "@/services/api/client";
-import { chromeSheet, glassColorScheme } from "@/theme/recipes";
+import { useRetryDisabledUntil } from "@/hooks/useRetryDisabledUntil";
+import { type ApiError } from "@/services/api/client";
 import { motion } from "@/theme/tokens";
 
 import { useProfile } from "@/features/profile/hooks/useProfile";
@@ -49,79 +34,6 @@ function profileErrorMessage(error: ApiError | null): string {
     return "Too many requests — try again";
   }
   return "Something went wrong.";
-}
-
-function useRetryDisabledUntil(error: ApiError | null): boolean {
-  const [trackedError, setTrackedError] = useState(error);
-  const [disabled, setDisabled] = useState(() => error?.status === 429);
-
-  if (error !== trackedError) {
-    setTrackedError(error);
-    setDisabled(error?.status === 429);
-  }
-
-  useEffect(() => {
-    if (error?.status !== 429) return;
-    const ms = getRetryAfterMs(error.retryAfter, error.headers);
-    const wait = Math.max(1000, ms ?? 1000);
-    const id = setTimeout(() => {
-      setDisabled(false);
-    }, wait);
-    return () => clearTimeout(id);
-  }, [error]);
-
-  return disabled;
-}
-
-function ProfileWash({
-  children,
-  style,
-}: {
-  children: ReactNode;
-  style: StyleProp<ViewStyle>;
-}) {
-  const { theme } = useUnistyles();
-  const reduceTransparency = useReduceTransparency();
-  const chrome = chromeSheet(theme);
-
-  if (Platform.OS === "android") {
-    return <View style={[style, styles.chromeAndroid]}>{children}</View>;
-  }
-
-  const canGlass =
-    !reduceTransparency &&
-    isLiquidGlassAvailable() &&
-    isGlassEffectAPIAvailable();
-
-  // Host fill covers native empty-effect dark frame; never opaque-fill GlassView.
-  if (canGlass) {
-    return (
-      <View style={[styles.glassHost, styles.hostFill]}>
-        <GlassView
-          style={[style, styles.iosBorder]}
-          tintColor={theme.colors.glassTint}
-          colorScheme={glassColorScheme(theme)}
-          glassEffectStyle="regular">
-          {children}
-        </GlassView>
-      </View>
-    );
-  }
-
-  if (!reduceTransparency && chrome.useGlass) {
-    return (
-      <View style={[styles.glassHost, styles.hostFill]}>
-        <BlurView
-          intensity={chrome.blurRadius ?? theme.blur.full}
-          tint="default"
-          style={[style, styles.blurFill]}>
-          {children}
-        </BlurView>
-      </View>
-    );
-  }
-
-  return <View style={[style, styles.chromeSolid]}>{children}</View>;
 }
 
 function ProfileShimmer() {
@@ -284,7 +196,6 @@ export default function ProfileScreen({ contactId }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => {
-  const chrome = chromeSheet(theme);
   return {
     outer: {
       backgroundColor: theme.colors.bg,
@@ -296,33 +207,6 @@ const styles = StyleSheet.create((theme) => {
     scrollContent: {
       gap: theme.space(3),
       padding: theme.space(4),
-    },
-    glassHost: {
-      borderRadius: theme.radius.lg,
-    },
-    hostFill: {
-      backgroundColor: chrome.backgroundColor,
-    },
-    iosBorder: {
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-    },
-    blurFill: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-      overflow: "hidden" as const,
-    },
-    chromeAndroid: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: chrome.borderColor,
-      borderWidth: chrome.borderWidth,
-      elevation: chrome.elevation,
-    },
-    chromeSolid: {
-      backgroundColor: chrome.backgroundColor,
-      borderColor: theme.colors.border,
-      borderWidth: 1,
     },
     card: {
       borderRadius: theme.radius.lg,
