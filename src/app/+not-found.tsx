@@ -50,12 +50,6 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: theme.space(2),
     textAlign: "center",
   },
-  hint: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.type.subhead.size,
-    marginTop: theme.space(1),
-    textAlign: "center",
-  },
   link: {
     color: theme.colors.primary,
     fontWeight: "600",

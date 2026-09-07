@@ -208,16 +208,6 @@ function ContactDetailsCard({ phone }: { phone: string }) {
   );
 }
 
-function BlockSection({
-  contactId,
-  name,
-}: {
-  contactId: string;
-  name: string;
-}) {
-  return <BlockConfirm contactId={contactId} name={name} />;
-}
-
 export default function ProfileScreen({ contactId }: Props) {
   const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
@@ -272,7 +262,7 @@ export default function ProfileScreen({ contactId }: Props) {
       <ContactDetailsCard phone={data.phone} />
 
       {/* Danger zone — WhatsApp Block/Report bottom group; Block entry wired to useBlock, Report omitted (no report feature in v1) */}
-      <BlockSection contactId={contactId} name={data.name} />
+      <BlockConfirm contactId={contactId} name={data.name} />
     </ScrollView>
   );
 
@@ -353,14 +343,6 @@ const styles = StyleSheet.create((theme) => {
       lineHeight: theme.type.title2.lineHeight,
       textAlign: "center",
     },
-    phone: {
-      color: theme.colors.textSecondary,
-      fontSize: theme.type.body.size,
-      fontWeight: theme.type.body.weight,
-      letterSpacing: theme.type.body.letterSpacing,
-      lineHeight: theme.type.body.lineHeight,
-      textAlign: "center",
-    },
     // Section — WhatsApp grouped-inset feel (Contact info label + inset row)
     section: {
       gap: theme.space(3),
@@ -410,21 +392,11 @@ const styles = StyleSheet.create((theme) => {
       paddingVertical: theme.space(2),
       width: "100%",
     },
-    blockRowPressable: {
-      minHeight: 44,
-      justifyContent: "center",
-    },
     blockRow: {
       alignItems: "center",
       flexDirection: "row",
       gap: theme.space(3),
       minHeight: 44,
-    },
-    blockText: {
-      fontSize: theme.type.body.size,
-      fontWeight: "600",
-      letterSpacing: theme.type.body.letterSpacing,
-      lineHeight: theme.type.body.lineHeight,
     },
     // Shimmer — grouped sections
     shimmerName: {
