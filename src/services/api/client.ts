@@ -69,14 +69,8 @@ client.interceptors.response.use(
     return response;
   },
   (error: unknown) => {
+    // Normalize only — 429 toast lives on Query/MutationCache after retries.
     const apiError = toApiError(error);
-    // Surface toast / warn for 429 and low remaining
-    // Do not swallow error — always reject with normalized shape
-    handleRateLimit({
-      status: apiError.status,
-      retryAfter: apiError.retryAfter,
-      headers: apiError.headers,
-    });
     // Normalized ApiError is the app's error contract — not a raw Error subclass.
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
     return Promise.reject(apiError);

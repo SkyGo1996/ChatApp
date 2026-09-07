@@ -1,9 +1,32 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 
+import type { ApiError } from "@/services/api/client";
 import { getRetryAfterMs, isRetryableStatus } from "@/services/api/client";
+import { handleRateLimit } from "@/services/api/rate-limit";
+
+/** Toast 429 only after TanStack retries are exhausted (not mid-flight). */
+function notifySettledRateLimit(error: unknown): void {
+  const e = error as ApiError;
+  if (e.status !== 429) return;
+  handleRateLimit({
+    status: e.status,
+    retryAfter: e.retryAfter,
+    headers: e.headers,
+  });
+}
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error) => {
+        notifySettledRateLimit(error);
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        notifySettledRateLimit(error);
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: 5 * 60 * 1000, // 5m = max-age 300

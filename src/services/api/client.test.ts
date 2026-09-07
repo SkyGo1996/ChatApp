@@ -1,4 +1,58 @@
-import { getRetryAfterMs, isRetryableStatus } from "./client";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { toast } from "sonner-native";
+
+import { mswProfileDetailUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
+
+import { client, getRetryAfterMs, isRetryableStatus } from "./client";
+import { endpoints } from "./endpoints";
+
+const server = setupServer();
+
+beforeAll(() => {
+  useNodeHttpAdapterForMsw();
+  server.listen({ onUnhandledRequest: "error" });
+});
+afterEach(() => {
+  server.resetHandlers();
+  jest.clearAllMocks();
+});
+afterAll(() => server.close());
+
+describe("client error interceptor", () => {
+  describe("when the response is 429", () => {
+    it("should reject with ApiError without toasting", async () => {
+      // Arrange
+      const contactId = 3;
+      server.use(
+        http.get(mswProfileDetailUrl(contactId), () =>
+          HttpResponse.json(
+            { error: "Too many requests" },
+            {
+              status: 429,
+              headers: {
+                "retry-after": "2",
+                "x-ratelimit-remaining": "0",
+              },
+            }
+          )
+        )
+      );
+
+      // Act
+      const rejection = client.get(endpoints.profile.detail(contactId));
+
+      // Assert
+      await expect(rejection).rejects.toMatchObject({
+        status: 429,
+        message: "Too many requests",
+        retryAfter: "2",
+      });
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(toast.warning).not.toHaveBeenCalled();
+    });
+  });
+});
 
 describe("isRetryableStatus", () => {
   test("network/timeout (undefined) is retryable", () => {
