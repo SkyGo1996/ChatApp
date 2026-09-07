@@ -4,13 +4,20 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { type ReactNode } from "react";
 
+import { queryKeys } from "@/lib/query-keys";
 import { mswMessagesCollectionUrl, useNodeHttpAdapterForMsw } from "@/test-msw";
 import { createTestQueryClient } from "@/test-utils";
 
 import { MESSAGES_PAGE_SIZE } from "@/features/chat/api/fetchMessagesPage";
 import { makePost } from "@/features/chat/test-fixtures";
+import type { Message } from "@/features/chat/types";
 
-import { getOlderMessagesPageParam, useMessages } from "./useMessages";
+import { appendOutgoing } from "./outgoingCache";
+import {
+  getOlderMessagesPageParam,
+  useMessages,
+  type MessagesInfiniteData,
+} from "./useMessages";
 
 const contactId = 5;
 const postsPath = mswMessagesCollectionUrl();
@@ -142,5 +149,61 @@ describe("useMessages", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.items).toEqual([]);
+  });
+
+  it("should preserve outgoing me row when send races the first tail GET", async () => {
+    // Arrange
+    let releaseGet!: () => void;
+    const getHeld = new Promise<void>((resolve) => {
+      releaseGet = resolve;
+    });
+
+    server.use(
+      http.get(postsPath, async ({ request }) => {
+        const url = new URL(request.url);
+        const limit = Number(url.searchParams.get("limit") ?? 20);
+        const offset = Number(url.searchParams.get("offset") ?? 0);
+        requests.push({ offset, limit });
+        await getHeld;
+        return HttpResponse.json({
+          total: 1,
+          limit,
+          offset,
+          results: [makePost(1, { userId: contactId, body: "Server message" })],
+        });
+      })
+    );
+
+    const qc = createTestQueryClient();
+    const { result } = await renderHook(() => useMessages(contactId), {
+      wrapper: wrapperFor(qc),
+    });
+
+    await waitFor(() => expect(requests.length).toBe(1));
+
+    const outgoing: Message = {
+      id: "local-race-1",
+      text: "Sent during skeleton",
+      sender: "me",
+      createdAt: "2026-09-07T12:00:00.000Z",
+      status: "sending",
+    };
+    qc.setQueryData<MessagesInfiniteData>(
+      queryKeys.messages(contactId),
+      (old) => appendOutgoing(old, outgoing)
+    );
+
+    // Act
+    releaseGet();
+
+    // Assert
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.items.map((m) => m.id)).toEqual([1, "local-race-1"]);
+    expect(result.current.items[1]).toMatchObject({
+      id: "local-race-1",
+      sender: "me",
+      text: "Sent during skeleton",
+      status: "sending",
+    });
   });
 });

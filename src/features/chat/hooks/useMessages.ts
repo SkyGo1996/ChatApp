@@ -47,8 +47,9 @@ export function messagesInfiniteOptions(conversationId: string | number) {
       if (pageParam === "tail") {
         // Mock POST is not in subsequent GETs — re-attach outgoing `me` rows
         // (in-flight local-* and server-shaped id 101) on refetch.
-        const previous = client.getQueryData<MessagesInfiniteData>(queryKey);
+        // Read cache AFTER the await so send during skeleton is not wiped.
         const page = await fetchNewestMessagesPage(conversationId);
+        const previous = client.getQueryData<MessagesInfiniteData>(queryKey);
         return preserveOutgoingOnTail(previous, page);
       }
       return fetchMessagesPage(conversationId, {
