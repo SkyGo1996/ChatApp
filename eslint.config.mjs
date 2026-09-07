@@ -1,15 +1,12 @@
 // https://docs.expo.dev/guides/using-eslint/
 // https://typescript-eslint.io/getting-started
 // https://typescript-eslint.io/getting-started/typed-linting
-// https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/README.md
 // https://github.com/ArnaudBarre/eslint-plugin-react-refresh
 // https://github.com/un-ts/eslint-plugin-import-x
-import js from "@eslint/js";
 import expoConfig from "eslint-config-expo/flat.js";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import { createNodeResolver, importX } from "eslint-plugin-import-x";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
-import reactHooks from "eslint-plugin-react-hooks";
 import { reactRefresh } from "eslint-plugin-react-refresh";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
@@ -77,38 +74,11 @@ const typeOwnershipRestrictedSyntax = [
   },
 ];
 
-/**
- * Strip Expo's bundled react-hooks plugin/rules so we can compose
- * `reactHooks.configs.flat.recommended` without "Cannot redefine plugin".
- * @see https://github.com/expo/expo/issues/43758
- */
-const expoConfigWithoutReactHooks = expoConfig.map((config) => {
-  if (!config.plugins?.["react-hooks"]) {
-    return config;
-  }
-
-  const { "react-hooks": _reactHooks, ...plugins } = config.plugins;
-  const rules = Object.fromEntries(
-    Object.entries(config.rules ?? {}).filter(
-      ([ruleName]) => !ruleName.startsWith("react-hooks/")
-    )
-  );
-
-  return {
-    ...config,
-    plugins,
-    rules,
-  };
-});
-
 export default defineConfig([
-  expoConfigWithoutReactHooks,
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
+  // Expo already includes react-hooks v7 recommended (incl. compiler rules).
+  expoConfig,
+  // recommendedTypeChecked includes recommended — do not also spread recommended.
   ...tseslint.configs.recommendedTypeChecked,
-  // Explicit react-hooks recommended (includes React Compiler rules in v7).
-  // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/README.md
-  reactHooks.configs.flat.recommended,
   // Fast Refresh: Expo Router route/layout exports are allowed.
   // https://github.com/ArnaudBarre/eslint-plugin-react-refresh
   reactRefresh.configs.recommended({
@@ -150,21 +120,6 @@ export default defineConfig([
     languageOptions: {
       globals: globals.node,
     },
-    rules: {
-      "@typescript-eslint/no-require-imports": "off",
-    },
-  },
-  // Jest setup / test helpers: `require` is required inside jest.mock factories
-  // (hoisted, out-of-scope `import` is forbidden). Disable only that rule;
-  // keep type-aware checks (no-unsafe-*) active.
-  {
-    files: [
-      "src/test-setup.ts",
-      "src/test-utils.tsx",
-      "src/test-msw.ts",
-      "src/**/*.test.{ts,tsx}",
-      "src/**/__tests__/**/*.{ts,tsx}",
-    ],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },
@@ -248,26 +203,19 @@ export default defineConfig([
       "no-restricted-syntax": "off",
       // Expo's bundled eslint-plugin-import still owns this rule name.
       "import/no-named-as-default-member": "off",
-      "import-x/no-named-as-default-member": "off",
     },
   },
-  // Test helpers are not Fast Refresh entry points (export * re-exports, util modules).
+  // Jest setup / tests: `require` in jest.mock factories; not Fast Refresh entry points.
   {
     files: [
-      "src/test-utils.tsx",
       "src/test-setup.ts",
+      "src/test-utils.tsx",
       "src/test-msw.ts",
       "src/**/*.test.{ts,tsx}",
-      "src/**/__tests__/**/*.{ts,tsx}",
     ],
     rules: {
+      "@typescript-eslint/no-require-imports": "off",
       "react-refresh/only-export-components": "off",
-    },
-  },
-  {
-    files: ["src/services/api/rate-limit.ts"],
-    rules: {
-      "no-console": "off",
     },
   },
   {
